@@ -1,0 +1,6 @@
+---
+# Phase 6: Deploy Directus (headless CMS).
+# - Template and apply the Directus secret (admin creds, DB connection, S3 config)
+# - Apply deployment (single replica, env from secret)
+# - Apply ClusterIP service and Ingress for cms.tunenumbers.de
+# - Wait for pod to be ready and Directus health endpoint to return OK

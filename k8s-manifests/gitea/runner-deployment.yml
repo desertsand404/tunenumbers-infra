@@ -1,0 +1,3 @@
+---
+# Gitea Actions runner deployment. Connects to Gitea instance, executes CI workflows.
+# Image: gitea/act_runner. Resource limits from vars.resources.gitea_runner.

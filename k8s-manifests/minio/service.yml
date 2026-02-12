@@ -1,0 +1,2 @@
+---
+# MinIO ClusterIP service. Exposes API port 9000 and console port 9001.

@@ -1,0 +1,7 @@
+---
+# Phase 7: Deploy Gitea (self-hosted Git) with Actions runner.
+# - Apply deployment (single replica, PVC mount, PostgreSQL connection)
+# - Apply ClusterIP service and Ingress for git.tunenumbers.de
+# - Apply RBAC for the Gitea Actions runner
+# - Apply runner deployment (connects to Gitea, runs CI jobs)
+# - Wait for Gitea to be reachable and create admin user

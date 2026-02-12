@@ -1,0 +1,6 @@
+---
+# Phase 8: Deploy the Astro SSR frontend.
+# - Template and apply the registry secret (for pulling container images)
+# - Apply deployment (single replica, DIRECTUS_URL env var)
+# - Apply ClusterIP service and Ingress for tunenumbers.de
+# - Wait for pod to be ready

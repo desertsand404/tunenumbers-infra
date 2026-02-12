@@ -1,0 +1,6 @@
+---
+# Phase 5: Deploy MinIO (S3-compatible object storage).
+# - Template and apply the MinIO secret (root credentials from vault)
+# - Apply deployment (single replica, PVC mount)
+# - Apply ClusterIP service and Ingress for s3.tunenumbers.de
+# - Apply init job to create the default bucket for Directus uploads

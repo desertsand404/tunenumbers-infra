@@ -1,0 +1,3 @@
+---
+# PostgreSQL deployment. Single replica, mounts pvc-postgresql.
+# Image: postgres:16-alpine. Resource limits from vars.resources.postgresql.

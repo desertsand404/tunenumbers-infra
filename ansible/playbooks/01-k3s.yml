@@ -1,0 +1,6 @@
+---
+# Phase 1: Install K3s on the target server.
+# - Download and run the K3s install script
+# - Disable Traefik (we use the built-in Ingress from K3s or custom)
+# - Wait for the node to become Ready
+# - Fetch kubeconfig to use kubectl remotely

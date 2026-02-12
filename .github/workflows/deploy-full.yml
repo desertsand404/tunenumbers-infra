@@ -1,0 +1,4 @@
+# Full deployment workflow.
+# Triggers: manual (workflow_dispatch).
+# Runs ansible-playbook site.yml against the production server.
+# Requires GitHub Secrets: SERVER_IP, SERVER_USER, SSH_PRIVATE_KEY, ANSIBLE_VAULT_PASSWORD.

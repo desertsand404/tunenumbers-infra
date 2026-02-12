@@ -1,0 +1,5 @@
+ansible/vars/secrets.yml
+*.retry
+.env
+.DS_Store
+.vagrant

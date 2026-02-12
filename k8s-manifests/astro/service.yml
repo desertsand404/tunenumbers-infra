@@ -1,0 +1,2 @@
+---
+# Astro ClusterIP service. Exposes port 4321 within the cluster.

@@ -1,0 +1,3 @@
+---
+# PersistentVolume for Gitea data.
+# Uses hostPath at /data/gitea, size from vars.storage.gitea_size.

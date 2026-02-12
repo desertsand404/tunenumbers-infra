@@ -1,0 +1,3 @@
+---
+# Astro SSR deployment. Single replica, DIRECTUS_URL env var.
+# Image pulled from Gitea registry. Resource limits from vars.resources.astro.

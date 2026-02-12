@@ -1,0 +1,2 @@
+---
+# Directus ClusterIP service. Exposes port 8055 within the cluster.

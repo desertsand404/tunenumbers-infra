@@ -1,0 +1,5 @@
+---
+# Phase 2: Install cert-manager for automatic TLS certificates.
+# - Apply the cert-manager CRDs and deployment via kubectl
+# - Wait for cert-manager pods to be ready
+# - Template and apply the ClusterIssuer for Let's Encrypt (staging + production)

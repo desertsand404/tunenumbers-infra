@@ -1,0 +1,7 @@
+---
+# Phase 4: Deploy PostgreSQL.
+# - Template and apply the PostgreSQL secret (password from vault)
+# - Apply deployment (single replica, PVC mount)
+# - Apply ClusterIP service
+# - Wait for pod to be ready
+# - Create databases for Directus and Gitea

@@ -1,0 +1,3 @@
+---
+# RBAC for the Gitea Actions runner.
+# ServiceAccount, Role, and RoleBinding to allow the runner to manage pods for CI jobs.

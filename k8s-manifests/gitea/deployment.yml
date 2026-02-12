@@ -1,0 +1,3 @@
+---
+# Gitea deployment. Single replica, mounts pvc-gitea, connects to PostgreSQL.
+# Image: gitea/gitea. Resource limits from vars.resources.gitea.

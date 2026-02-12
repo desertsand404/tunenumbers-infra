@@ -1,0 +1,4 @@
+# Manifests-only deployment workflow.
+# Triggers: push to main (paths: k8s-manifests/**), manual (workflow_dispatch).
+# Re-applies K8s manifests without re-running full provisioning.
+# Requires GitHub Secrets: SERVER_IP, SERVER_USER, SSH_PRIVATE_KEY.

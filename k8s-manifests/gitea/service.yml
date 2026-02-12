@@ -1,0 +1,2 @@
+---
+# Gitea ClusterIP service. Exposes HTTP port 3000 and SSH port 22.

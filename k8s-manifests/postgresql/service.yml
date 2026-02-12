@@ -1,0 +1,2 @@
+---
+# PostgreSQL ClusterIP service. Exposes port 5432 within the cluster.

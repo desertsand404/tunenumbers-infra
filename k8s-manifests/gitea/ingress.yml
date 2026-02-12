@@ -1,0 +1,3 @@
+---
+# Gitea Ingress. Routes git.tunenumbers.de to the Gitea service.
+# TLS via cert-manager ClusterIssuer.

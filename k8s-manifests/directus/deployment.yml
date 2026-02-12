@@ -1,0 +1,3 @@
+---
+# Directus deployment. Single replica, env from directus-secret.
+# Image: directus/directus. Resource limits from vars.resources.directus.

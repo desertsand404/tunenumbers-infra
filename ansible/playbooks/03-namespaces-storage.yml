@@ -1,0 +1,5 @@
+---
+# Phase 3: Create Kubernetes namespaces and persistent storage.
+# - Apply namespaces (tunenumbers, gitea)
+# - Create host-path directories on the server
+# - Apply PersistentVolumes and PersistentVolumeClaims for PostgreSQL, MinIO, Gitea

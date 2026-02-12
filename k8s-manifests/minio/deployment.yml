@@ -1,0 +1,3 @@
+---
+# MinIO deployment. Single replica, mounts pvc-minio.
+# Image: minio/minio. Resource limits from vars.resources.minio.

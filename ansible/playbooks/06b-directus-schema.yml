@@ -1,0 +1,5 @@
+---
+# Phase 6b: Apply Directus schema and seed data.
+# - Wait for Directus API to be reachable
+# - Apply schema snapshot via Directus API (collections, fields, relations)
+# - Optionally seed initial data (tags, test release)

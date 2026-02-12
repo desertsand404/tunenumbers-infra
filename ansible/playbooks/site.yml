@@ -1,0 +1,30 @@
+---
+# Master playbook — runs all phases in order.
+# Usage: ansible-playbook ansible/playbooks/site.yml
+
+- name: Phase 1 — Install K3s
+  ansible.builtin.import_playbook: 01-k3s.yml
+
+- name: Phase 2 — Install cert-manager
+  ansible.builtin.import_playbook: 02-cert-manager.yml
+
+- name: Phase 3 — Create namespaces and storage
+  ansible.builtin.import_playbook: 03-namespaces-storage.yml
+
+- name: Phase 4 — Deploy PostgreSQL
+  ansible.builtin.import_playbook: 04-postgresql.yml
+
+- name: Phase 5 — Deploy MinIO
+  ansible.builtin.import_playbook: 05-minio.yml
+
+- name: Phase 6 — Deploy Directus
+  ansible.builtin.import_playbook: 06-directus.yml
+
+- name: Phase 6b — Apply Directus schema
+  ansible.builtin.import_playbook: 06b-directus-schema.yml
+
+- name: Phase 7 — Deploy Gitea
+  ansible.builtin.import_playbook: 07-gitea.yml
+
+- name: Phase 8 — Deploy Astro frontend
+  ansible.builtin.import_playbook: 08-astro.yml

@@ -1,0 +1,3 @@
+---
+# PersistentVolume for MinIO data.
+# Uses hostPath at /data/minio, size from vars.storage.minio_size.

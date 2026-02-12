@@ -1,0 +1,3 @@
+---
+# Directus Ingress. Routes cms.tunenumbers.de to the Directus service.
+# TLS via cert-manager ClusterIssuer.

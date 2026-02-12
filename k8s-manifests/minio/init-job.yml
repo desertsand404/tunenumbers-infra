@@ -1,0 +1,3 @@
+---
+# MinIO init Job. Creates the default "directus" bucket after MinIO is ready.
+# Uses mc (MinIO Client) to configure alias and create bucket.

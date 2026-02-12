@@ -1,0 +1,3 @@
+---
+# PersistentVolume for PostgreSQL data.
+# Uses hostPath at /data/postgresql, size from vars.storage.postgresql_size.

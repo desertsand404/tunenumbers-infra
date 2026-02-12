@@ -1,0 +1,3 @@
+---
+# Astro Ingress. Routes tunenumbers.de to the Astro service.
+# TLS via cert-manager ClusterIssuer.
