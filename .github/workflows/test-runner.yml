@@ -6,7 +6,9 @@ on:
 jobs:
   test:
     runs-on: self-hosted
-    
+    env:
+      KUBECONFIG: /home/github-runner/.kube/config
+      
     steps:
       - name: Runner System Info
         run: |
