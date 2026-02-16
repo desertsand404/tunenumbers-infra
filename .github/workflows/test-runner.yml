@@ -1,0 +1,52 @@
+name: Test Self-hosted Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: self-hosted
+    
+    steps:
+      - name: Runner System Info
+        run: |
+          echo "=== Hostname ==="
+          hostname
+          echo ""
+          echo "=== User ==="
+          whoami
+          echo ""
+          echo "=== Working Directory ==="
+          pwd
+          echo ""
+          echo "=== OS Info ==="
+          uname -a
+          lsb_release -a
+          echo ""
+          echo "=== IP Addresses ==="
+          ip addr show | grep "inet "
+          echo ""
+          echo "=== Disk Space ==="
+          df -h /
+          echo ""
+          echo "=== Memory ==="
+          free -h
+      
+      - name: Check Docker
+        run: |
+          echo "=== Docker Version ==="
+          docker --version
+          echo ""
+          echo "=== Docker Containers ==="
+          docker ps -a
+      
+      - name: Check k3s
+        run: |
+          echo "=== kubectl Version ==="
+          kubectl version --client
+          echo ""
+          echo "=== k3s Nodes ==="
+          kubectl get nodes
+          echo ""
+          echo "=== k3s Pods ==="
+          kubectl get pods -A
