@@ -82,15 +82,19 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+          startupProbe:
+            httpGet:
+              path: /server/health
+              port: 8055
+            failureThreshold: 30
+            periodSeconds: 10
           readinessProbe:
             httpGet:
               path: /server/health
               port: 8055
-            initialDelaySeconds: 30
             periodSeconds: 10
           livenessProbe:
             httpGet:
               path: /server/health
               port: 8055
-            initialDelaySeconds: 60
             periodSeconds: 30
