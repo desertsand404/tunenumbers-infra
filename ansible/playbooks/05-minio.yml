@@ -39,9 +39,24 @@
       register: minio_ing
       changed_when: "'created' in minio_ing.stdout or 'configured' in minio_ing.stdout"
 
-    - name: Restart MinIO deployment to pick up new secret
+    - name: Scale down MinIO to clear stuck replicas
       ansible.builtin.command: >
-        kubectl -n {{ namespaces.app }} rollout restart deployment/minio
+        kubectl -n {{ namespaces.app }} scale deployment/minio --replicas=0
+      changed_when: true
+
+    - name: Wait for MinIO pods to terminate
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.app }} wait --for=delete pod -l app=minio --timeout=60s 2>/dev/null || true
+      changed_when: false
+
+    - name: Force-delete any remaining MinIO pods
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.app }} delete pods -l app=minio --force --grace-period=0 2>/dev/null || true
+      changed_when: false
+
+    - name: Scale up MinIO
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} scale deployment/minio --replicas=1
       changed_when: true
 
     - name: Wait for MinIO pod to be ready
