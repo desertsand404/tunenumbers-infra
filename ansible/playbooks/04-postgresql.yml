@@ -34,6 +34,11 @@
       register: pg_svc
       changed_when: "'created' in pg_svc.stdout or 'configured' in pg_svc.stdout"
 
+    - name: Restart PostgreSQL deployment to pick up new secret
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout restart deployment/postgresql
+      changed_when: true
+
     - name: Wait for PostgreSQL pod to be ready
       ansible.builtin.command: >
         kubectl -n {{ namespaces.app }} rollout status deployment/postgresql --timeout=120s
