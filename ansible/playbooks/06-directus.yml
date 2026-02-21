@@ -39,6 +39,11 @@
       register: dir_ing
       changed_when: "'created' in dir_ing.stdout or 'configured' in dir_ing.stdout"
 
+    - name: Delete stuck Directus pods if any
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.app }} delete pods -l app=directus --force --grace-period=0 2>/dev/null || true
+      changed_when: false
+
     - name: Restart Directus deployment to pick up new secret
       ansible.builtin.command: >
         kubectl -n {{ namespaces.app }} rollout restart deployment/directus
@@ -46,5 +51,5 @@
 
     - name: Wait for Directus pod to be ready
       ansible.builtin.command: >
-        kubectl -n {{ namespaces.app }} rollout status deployment/directus --timeout=180s
+        kubectl -n {{ namespaces.app }} rollout status deployment/directus --timeout=300s
       changed_when: false
