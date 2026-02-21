@@ -1,7 +1,40 @@
 ---
-# Phase 4: Deploy PostgreSQL.
-# - Template and apply the PostgreSQL secret (password from vault)
-# - Apply deployment (single replica, PVC mount)
-# - Apply ClusterIP service
-# - Wait for pod to be ready
-# - Create databases for Directus and Gitea
+- name: Phase 4 — Deploy PostgreSQL
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Template PostgreSQL secret
+      ansible.builtin.template:
+        src: ../../k8s-manifests/postgresql/secret.yml.j2
+        dest: /tmp/postgresql-secret.yml
+        mode: "0600"
+
+    - name: Apply PostgreSQL secret
+      ansible.builtin.command: kubectl apply -f /tmp/postgresql-secret.yml
+      register: pg_secret
+      changed_when: "'created' in pg_secret.stdout or 'configured' in pg_secret.stdout"
+
+    - name: Remove templated secret file
+      ansible.builtin.file:
+        path: /tmp/postgresql-secret.yml
+        state: absent
+
+    - name: Apply PostgreSQL deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/postgresql/deployment.yml
+      register: pg_deploy
+      changed_when: "'created' in pg_deploy.stdout or 'configured' in pg_deploy.stdout"
+
+    - name: Apply PostgreSQL service
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/postgresql/service.yml
+      register: pg_svc
+      changed_when: "'created' in pg_svc.stdout or 'configured' in pg_svc.stdout"
+
+    - name: Wait for PostgreSQL pod to be ready
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout status deployment/postgresql --timeout=120s
+      changed_when: false

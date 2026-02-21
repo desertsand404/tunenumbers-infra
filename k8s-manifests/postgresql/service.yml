@@ -1,2 +1,12 @@
----
-# PostgreSQL ClusterIP service. Exposes port 5432 within the cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql
+  namespace: tunenumbers
+spec:
+  type: ClusterIP
+  ports:
+    - port: 5432
+      targetPort: 5432
+  selector:
+    app: postgresql

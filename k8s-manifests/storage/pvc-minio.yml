@@ -1,2 +1,12 @@
----
-# PersistentVolumeClaim for MinIO, bound to pv-minio.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: minio-pvc
+  namespace: tunenumbers
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: minio-pv
+  resources:
+    requests:
+      storage: 15Gi

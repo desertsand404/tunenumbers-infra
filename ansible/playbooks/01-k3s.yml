@@ -1,6 +1,32 @@
 ---
-# Phase 1: Install K3s on the target server.
-# - Download and run the K3s install script
-# - Disable Traefik (we use the built-in Ingress from K3s or custom)
-# - Wait for the node to become Ready
-# - Fetch kubeconfig to use kubectl remotely
+- name: Phase 1 — Ensure K3s is installed
+  hosts: localhost
+  gather_facts: true
+  vars_files:
+    - ../vars/main.yml
+  tasks:
+    - name: Check if k3s is already installed
+      ansible.builtin.stat:
+        path: /usr/local/bin/k3s
+      register: k3s_binary
+
+    - name: Install k3s (skip Traefik install — already running)
+      ansible.builtin.shell: |
+        curl -sfL https://get.k3s.io | INSTALL_K3S_EXEC="--disable=none" sh -
+      when: not k3s_binary.stat.exists
+
+    - name: Wait for k3s node to be Ready
+      ansible.builtin.command: kubectl get nodes -o jsonpath='{.items[0].status.conditions[?(@.type=="Ready")].status}'
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      register: node_ready
+      until: node_ready.stdout == "True"
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Verify kubectl works
+      ansible.builtin.command: kubectl cluster-info
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      changed_when: false

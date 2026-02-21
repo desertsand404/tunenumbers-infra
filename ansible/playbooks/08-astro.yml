@@ -1,6 +1,45 @@
 ---
-# Phase 8: Deploy the Astro SSR frontend.
-# - Template and apply the registry secret (for pulling container images)
-# - Apply deployment (single replica, DIRECTUS_URL env var)
-# - Apply ClusterIP service and Ingress for tunenumbers.de
-# - Wait for pod to be ready
+- name: Phase 8 — Deploy Astro SSR frontend
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Template registry secret
+      ansible.builtin.template:
+        src: ../../k8s-manifests/astro/registry-secret.yml.j2
+        dest: /tmp/registry-secret.yml
+        mode: "0600"
+
+    - name: Apply registry secret
+      ansible.builtin.command: kubectl apply -f /tmp/registry-secret.yml
+      register: reg_secret
+      changed_when: "'created' in reg_secret.stdout or 'configured' in reg_secret.stdout"
+
+    - name: Remove templated secret file
+      ansible.builtin.file:
+        path: /tmp/registry-secret.yml
+        state: absent
+
+    - name: Apply Astro deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/astro/deployment.yml
+      register: astro_deploy
+      changed_when: "'created' in astro_deploy.stdout or 'configured' in astro_deploy.stdout"
+
+    - name: Apply Astro service
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/astro/service.yml
+      register: astro_svc
+      changed_when: "'created' in astro_svc.stdout or 'configured' in astro_svc.stdout"
+
+    - name: Apply Astro ingress
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/astro/ingress.yml
+      register: astro_ing
+      changed_when: "'created' in astro_ing.stdout or 'configured' in astro_ing.stdout"
+
+    - name: Wait for Astro pod to be ready
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout status deployment/astro-frontend --timeout=120s
+      changed_when: false

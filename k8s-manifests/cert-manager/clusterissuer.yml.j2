@@ -1,3 +1,14 @@
----
-# ClusterIssuer for Let's Encrypt production certificates.
-# Templated by Ansible — letsencrypt_email comes from vars.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: {{ letsencrypt_email }}
+    privateKeySecretRef:
+      name: letsencrypt-prod-key
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: traefik

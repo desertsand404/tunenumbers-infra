@@ -1,3 +1,16 @@
----
-# PersistentVolume for MinIO data.
-# Uses hostPath at /data/minio, size from vars.storage.minio_size.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: minio-pv
+spec:
+  capacity:
+    storage: 15Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /data/minio
+    type: DirectoryOrCreate
+  claimRef:
+    namespace: tunenumbers
+    name: minio-pvc

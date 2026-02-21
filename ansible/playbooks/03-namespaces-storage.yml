@@ -1,5 +1,41 @@
 ---
-# Phase 3: Create Kubernetes namespaces and persistent storage.
-# - Apply namespaces (tunenumbers, gitea)
-# - Create host-path directories on the server
-# - Apply PersistentVolumes and PersistentVolumeClaims for PostgreSQL, MinIO, Gitea
+- name: Phase 3 — Create namespaces and persistent storage
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Apply namespaces
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/namespaces.yml
+      register: ns_apply
+      changed_when: "'created' in ns_apply.stdout or 'configured' in ns_apply.stdout"
+
+    - name: Create host-path directories for persistent storage
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: directory
+        mode: "0755"
+      loop:
+        - "{{ storage.postgresql.path }}"
+        - "{{ storage.minio.path }}"
+        - "{{ storage.gitea.path }}"
+
+    - name: Apply PersistentVolumes
+      ansible.builtin.command: "kubectl apply -f ../../k8s-manifests/storage/{{ item }}"
+      loop:
+        - pv-postgresql.yml
+        - pv-minio.yml
+        - pv-gitea.yml
+      register: pv_apply
+      changed_when: "'created' in pv_apply.stdout or 'configured' in pv_apply.stdout"
+
+    - name: Apply PersistentVolumeClaims
+      ansible.builtin.command: "kubectl apply -f ../../k8s-manifests/storage/{{ item }}"
+      loop:
+        - pvc-postgresql.yml
+        - pvc-minio.yml
+        - pvc-gitea.yml
+      register: pvc_apply
+      changed_when: "'created' in pvc_apply.stdout or 'configured' in pvc_apply.stdout"

@@ -1,7 +1,80 @@
 ---
-# Phase 7: Deploy Gitea (self-hosted Git) with Actions runner.
-# - Apply deployment (single replica, PVC mount, PostgreSQL connection)
-# - Apply ClusterIP service and Ingress for git.tunenumbers.de
-# - Apply RBAC for the Gitea Actions runner
-# - Apply runner deployment (connects to Gitea, runs CI jobs)
-# - Wait for Gitea to be reachable and create admin user
+- name: Phase 7 — Deploy Gitea with Actions runner
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Apply Gitea deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/gitea/deployment.yml
+      register: gitea_deploy
+      changed_when: "'created' in gitea_deploy.stdout or 'configured' in gitea_deploy.stdout"
+
+    - name: Apply Gitea services
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/gitea/service.yml
+      register: gitea_svc
+      changed_when: "'created' in gitea_svc.stdout or 'configured' in gitea_svc.stdout"
+
+    - name: Apply Gitea ingress
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/gitea/ingress.yml
+      register: gitea_ing
+      changed_when: "'created' in gitea_ing.stdout or 'configured' in gitea_ing.stdout"
+
+    - name: Wait for Gitea pod to be ready
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} rollout status deployment/gitea --timeout=120s
+      changed_when: false
+
+    - name: Check if Gitea admin user exists
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} exec deployment/gitea --
+        gitea admin user list --admin
+      register: gitea_users
+      changed_when: false
+      failed_when: false
+
+    - name: Create Gitea admin user
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} exec deployment/gitea --
+        gitea admin user create
+        --username {{ gitea_admin_user }}
+        --password {{ gitea_admin_password }}
+        --email {{ gitea_admin_email }}
+        --admin
+      when: gitea_admin_user not in gitea_users.stdout
+      register: gitea_admin
+      changed_when: "'created' in gitea_admin.stdout"
+
+    - name: Apply Gitea runner RBAC
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/gitea/runner-rbac.yml
+      register: runner_rbac
+      changed_when: "'created' in runner_rbac.stdout or 'configured' in runner_rbac.stdout"
+
+    - name: Check if gitea-runner-secret exists
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} get secret gitea-runner-secret
+      register: runner_secret_check
+      failed_when: false
+      changed_when: false
+
+    - name: Generate Gitea runner registration token
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} exec deployment/gitea --
+        gitea actions generate-runner-token
+      register: runner_token
+      when: runner_secret_check.rc != 0
+      changed_when: false
+
+    - name: Create gitea-runner-secret
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} create secret generic gitea-runner-secret
+        --from-literal=token={{ runner_token.stdout | trim }}
+      when: runner_secret_check.rc != 0
+
+    - name: Apply Gitea runner deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/gitea/runner-deployment.yml
+      register: runner_deploy
+      changed_when: "'created' in runner_deploy.stdout or 'configured' in runner_deploy.stdout"

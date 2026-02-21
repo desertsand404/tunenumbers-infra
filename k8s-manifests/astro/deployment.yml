@@ -1,3 +1,49 @@
----
-# Astro SSR deployment. Single replica, DIRECTUS_URL env var.
-# Image pulled from Gitea registry. Resource limits from vars.resources.astro.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: astro-frontend
+  namespace: tunenumbers
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: astro-frontend
+  template:
+    metadata:
+      labels:
+        app: astro-frontend
+    spec:
+      imagePullSecrets:
+        - name: gitea-registry-secret
+      containers:
+        - name: astro
+          image: git.tunenumbers.de/tunenumbers/website:latest
+          ports:
+            - containerPort: 4321
+          env:
+            - name: DIRECTUS_URL
+              value: "http://directus.tunenumbers.svc.cluster.local:8055"
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "200m"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 4321
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 4321
+            initialDelaySeconds: 10
+            periodSeconds: 30

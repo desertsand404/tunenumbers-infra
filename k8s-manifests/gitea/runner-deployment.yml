@@ -1,3 +1,36 @@
----
-# Gitea Actions runner deployment. Connects to Gitea instance, executes CI workflows.
-# Image: gitea/act_runner. Resource limits from vars.resources.gitea_runner.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea-runner
+  namespace: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea-runner
+  template:
+    metadata:
+      labels:
+        app: gitea-runner
+    spec:
+      serviceAccountName: gitea-runner
+      containers:
+        - name: runner
+          image: gitea/act_runner:latest
+          env:
+            - name: GITEA_INSTANCE_URL
+              value: "http://gitea-http.gitea.svc.cluster.local:3000"
+            - name: GITEA_RUNNER_REGISTRATION_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: gitea-runner-secret
+                  key: token
+            - name: GITEA_RUNNER_LABELS
+              value: "ubuntu-latest:docker://node:20"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "1536Mi"
+              cpu: "1000m"

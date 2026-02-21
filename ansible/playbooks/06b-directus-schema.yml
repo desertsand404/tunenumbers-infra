@@ -1,5 +1,44 @@
 ---
-# Phase 6b: Apply Directus schema and seed data.
-# - Wait for Directus API to be reachable
-# - Apply schema snapshot via Directus API (collections, fields, relations)
-# - Optionally seed initial data (tags, test release)
+- name: Phase 6b — Apply Directus schema and seed data
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Get Directus pod ClusterIP service URL
+      ansible.builtin.set_fact:
+        directus_internal_url: "http://directus.{{ namespaces.app }}.svc.cluster.local:8055"
+
+    - name: Wait for Directus health endpoint
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} exec deployment/directus --
+        wget -qO- http://localhost:8055/server/health
+      register: health_check
+      until: health_check.rc == 0
+      retries: 30
+      delay: 10
+      changed_when: false
+
+    - name: Check if schema snapshot file exists
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../../directus-schema/snapshot.yaml"
+      register: schema_file
+
+    - name: Apply Directus schema snapshot
+      when: schema_file.stat.exists
+      block:
+        - name: Copy schema snapshot into Directus pod
+          ansible.builtin.command: >
+            kubectl -n {{ namespaces.app }} cp
+            {{ playbook_dir }}/../../directus-schema/snapshot.yaml
+            $(kubectl -n {{ namespaces.app }} get pod -l app=directus -o jsonpath='{.items[0].metadata.name}'):/tmp/snapshot.yaml
+
+        - name: Apply schema via Directus CLI
+          ansible.builtin.command: >
+            kubectl -n {{ namespaces.app }} exec deployment/directus --
+            npx directus schema apply /tmp/snapshot.yaml --yes
+          register: schema_apply
+          changed_when: "'applied' in schema_apply.stdout"

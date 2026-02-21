@@ -1,3 +1,24 @@
----
-# Gitea Ingress. Routes git.tunenumbers.de to the Gitea service.
-# TLS via cert-manager ClusterIssuer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: gitea-ingress
+  namespace: gitea
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - git.tunenumbers.de
+      secretName: gitea-tls
+  rules:
+    - host: git.tunenumbers.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: gitea-http
+                port:
+                  number: 3000

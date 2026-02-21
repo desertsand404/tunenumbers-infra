@@ -1,6 +1,45 @@
 ---
-# Phase 6: Deploy Directus (headless CMS).
-# - Template and apply the Directus secret (admin creds, DB connection, S3 config)
-# - Apply deployment (single replica, env from secret)
-# - Apply ClusterIP service and Ingress for cms.tunenumbers.de
-# - Wait for pod to be ready and Directus health endpoint to return OK
+- name: Phase 6 — Deploy Directus
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Template Directus secret
+      ansible.builtin.template:
+        src: ../../k8s-manifests/directus/secret.yml.j2
+        dest: /tmp/directus-secret.yml
+        mode: "0600"
+
+    - name: Apply Directus secret
+      ansible.builtin.command: kubectl apply -f /tmp/directus-secret.yml
+      register: dir_secret
+      changed_when: "'created' in dir_secret.stdout or 'configured' in dir_secret.stdout"
+
+    - name: Remove templated secret file
+      ansible.builtin.file:
+        path: /tmp/directus-secret.yml
+        state: absent
+
+    - name: Apply Directus deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/directus/deployment.yml
+      register: dir_deploy
+      changed_when: "'created' in dir_deploy.stdout or 'configured' in dir_deploy.stdout"
+
+    - name: Apply Directus service
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/directus/service.yml
+      register: dir_svc
+      changed_when: "'created' in dir_svc.stdout or 'configured' in dir_svc.stdout"
+
+    - name: Apply Directus ingress
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/directus/ingress.yml
+      register: dir_ing
+      changed_when: "'created' in dir_ing.stdout or 'configured' in dir_ing.stdout"
+
+    - name: Wait for Directus pod to be ready
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout status deployment/directus --timeout=180s
+      changed_when: false

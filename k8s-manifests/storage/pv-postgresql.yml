@@ -1,3 +1,16 @@
----
-# PersistentVolume for PostgreSQL data.
-# Uses hostPath at /data/postgresql, size from vars.storage.postgresql_size.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgresql-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /data/postgresql
+    type: DirectoryOrCreate
+  claimRef:
+    namespace: tunenumbers
+    name: postgresql-pvc

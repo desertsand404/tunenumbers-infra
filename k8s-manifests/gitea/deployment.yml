@@ -1,3 +1,60 @@
----
-# Gitea deployment. Single replica, mounts pvc-gitea, connects to PostgreSQL.
-# Image: gitea/gitea. Resource limits from vars.resources.gitea.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gitea
+  namespace: gitea
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gitea
+  template:
+    metadata:
+      labels:
+        app: gitea
+    spec:
+      containers:
+        - name: gitea
+          image: gitea/gitea:latest
+          ports:
+            - containerPort: 3000
+              name: http
+            - containerPort: 2222
+              name: ssh
+          env:
+            - name: GITEA__server__ROOT_URL
+              value: "https://git.tunenumbers.de"
+            - name: GITEA__server__SSH_DOMAIN
+              value: "git.tunenumbers.de"
+            - name: GITEA__server__SSH_PORT
+              value: "2222"
+            - name: GITEA__server__SSH_LISTEN_PORT
+              value: "2222"
+            - name: GITEA__database__DB_TYPE
+              value: "sqlite3"
+            - name: GITEA__actions__ENABLED
+              value: "true"
+            - name: GITEA__packages__ENABLED
+              value: "true"
+            - name: GITEA__service__DISABLE_REGISTRATION
+              value: "true"
+          volumeMounts:
+            - name: gitea-data
+              mountPath: /data
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /api/v1/version
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+      volumes:
+        - name: gitea-data
+          persistentVolumeClaim:
+            claimName: gitea-pvc

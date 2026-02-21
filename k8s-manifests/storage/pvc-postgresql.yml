@@ -1,2 +1,12 @@
----
-# PersistentVolumeClaim for PostgreSQL, bound to pv-postgresql.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgresql-pvc
+  namespace: tunenumbers
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: postgresql-pv
+  resources:
+    requests:
+      storage: 5Gi

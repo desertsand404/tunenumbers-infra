@@ -1,2 +1,12 @@
----
-# Directus ClusterIP service. Exposes port 8055 within the cluster.
+apiVersion: v1
+kind: Service
+metadata:
+  name: directus
+  namespace: tunenumbers
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8055
+      targetPort: 8055
+  selector:
+    app: directus

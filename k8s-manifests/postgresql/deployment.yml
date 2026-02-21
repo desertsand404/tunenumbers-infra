@@ -1,3 +1,55 @@
----
-# PostgreSQL deployment. Single replica, mounts pvc-postgresql.
-# Image: postgres:16-alpine. Resource limits from vars.resources.postgresql.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+  namespace: tunenumbers
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgresql
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+        - name: postgresql
+          image: postgres:16-alpine
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "directus"
+            - name: POSTGRES_USER
+              value: "directus"
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgresql-secret
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: postgresql-data
+              mountPath: /var/lib/postgresql/data
+              subPath: pgdata
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "250m"
+          livenessProbe:
+            exec:
+              command: ["pg_isready", "-U", "directus"]
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "directus"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: postgresql-data
+          persistentVolumeClaim:
+            claimName: postgresql-pvc

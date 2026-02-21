@@ -1,3 +1,30 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: gitea-runner
+  namespace: gitea
 ---
-# RBAC for the Gitea Actions runner.
-# ServiceAccount, Role, and RoleBinding to allow the runner to manage pods for CI jobs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: gitea-runner-deploy
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: gitea-runner-deploy-binding
+subjects:
+  - kind: ServiceAccount
+    name: gitea-runner
+    namespace: gitea
+roleRef:
+  kind: ClusterRole
+  name: gitea-runner-deploy
+  apiGroup: rbac.authorization.k8s.io

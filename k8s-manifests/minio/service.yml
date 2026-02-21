@@ -1,2 +1,16 @@
----
-# MinIO ClusterIP service. Exposes API port 9000 and console port 9001.
+apiVersion: v1
+kind: Service
+metadata:
+  name: minio
+  namespace: tunenumbers
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9000
+      targetPort: 9000
+      name: api
+    - port: 9001
+      targetPort: 9001
+      name: console
+  selector:
+    app: minio

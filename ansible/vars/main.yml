@@ -1,35 +1,41 @@
 ---
 domain: tunenumbers.de
-letsencrypt_email: "{{ vault_letsencrypt_email }}"
+server_ip: 49.13.95.244
+github_runner_user: github-runner
+github_runner_dir: /opt/actions-runner
+kubeconfig_path: /home/github-runner/.kube/config
 
 namespaces:
   app: tunenumbers
   gitea: gitea
 
 storage:
-  postgresql_size: 5Gi
-  postgresql_path: /data/postgresql
-  minio_size: 15Gi
-  minio_path: /data/minio
-  gitea_size: 5Gi
-  gitea_path: /data/gitea
+  postgresql:
+    size: 5Gi
+    path: /data/postgresql
+  minio:
+    size: 15Gi
+    path: /data/minio
+  gitea:
+    size: 5Gi
+    path: /data/gitea
 
 resources:
   postgresql:
-    requests: { memory: 256Mi, cpu: 100m }
-    limits: { memory: 512Mi, cpu: 250m }
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits: { memory: "512Mi", cpu: "250m" }
   minio:
-    requests: { memory: 256Mi, cpu: 100m }
-    limits: { memory: 512Mi, cpu: 250m }
+    requests: { memory: "256Mi", cpu: "100m" }
+    limits: { memory: "512Mi", cpu: "250m" }
   directus:
-    requests: { memory: 256Mi, cpu: 200m }
-    limits: { memory: 512Mi, cpu: 500m }
+    requests: { memory: "256Mi", cpu: "200m" }
+    limits: { memory: "512Mi", cpu: "500m" }
   gitea:
-    requests: { memory: 256Mi, cpu: 200m }
-    limits: { memory: 512Mi, cpu: 500m }
+    requests: { memory: "256Mi", cpu: "200m" }
+    limits: { memory: "512Mi", cpu: "500m" }
   gitea_runner:
-    requests: { memory: 256Mi, cpu: 200m }
-    limits: { memory: 1536Mi, cpu: 1000m }
+    requests: { memory: "256Mi", cpu: "200m" }
+    limits: { memory: "1536Mi", cpu: "1000m" }
   astro:
-    requests: { memory: 128Mi, cpu: 100m }
-    limits: { memory: 256Mi, cpu: 200m }
+    requests: { memory: "128Mi", cpu: "100m" }
+    limits: { memory: "256Mi", cpu: "200m" }

@@ -1,6 +1,61 @@
 ---
-# Phase 5: Deploy MinIO (S3-compatible object storage).
-# - Template and apply the MinIO secret (root credentials from vault)
-# - Apply deployment (single replica, PVC mount)
-# - Apply ClusterIP service and Ingress for s3.tunenumbers.de
-# - Apply init job to create the default bucket for Directus uploads
+- name: Phase 5 — Deploy MinIO
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Template MinIO secret
+      ansible.builtin.template:
+        src: ../../k8s-manifests/minio/secret.yml.j2
+        dest: /tmp/minio-secret.yml
+        mode: "0600"
+
+    - name: Apply MinIO secret
+      ansible.builtin.command: kubectl apply -f /tmp/minio-secret.yml
+      register: minio_secret
+      changed_when: "'created' in minio_secret.stdout or 'configured' in minio_secret.stdout"
+
+    - name: Remove templated secret file
+      ansible.builtin.file:
+        path: /tmp/minio-secret.yml
+        state: absent
+
+    - name: Apply MinIO deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/minio/deployment.yml
+      register: minio_deploy
+      changed_when: "'created' in minio_deploy.stdout or 'configured' in minio_deploy.stdout"
+
+    - name: Apply MinIO service
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/minio/service.yml
+      register: minio_svc
+      changed_when: "'created' in minio_svc.stdout or 'configured' in minio_svc.stdout"
+
+    - name: Apply MinIO ingress
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/minio/ingress.yml
+      register: minio_ing
+      changed_when: "'created' in minio_ing.stdout or 'configured' in minio_ing.stdout"
+
+    - name: Wait for MinIO pod to be ready
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout status deployment/minio --timeout=120s
+      changed_when: false
+
+    - name: Delete old minio-init-bucket job if exists
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} delete job minio-init-bucket --ignore-not-found
+      register: job_delete
+      changed_when: "'deleted' in job_delete.stdout"
+
+    - name: Apply MinIO init bucket job
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/minio/init-job.yml
+      register: minio_job
+      changed_when: "'created' in minio_job.stdout or 'configured' in minio_job.stdout"
+
+    - name: Wait for init bucket job to complete
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} wait --for=condition=complete job/minio-init-bucket --timeout=60s
+      changed_when: false

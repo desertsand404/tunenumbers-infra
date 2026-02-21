@@ -1,3 +1,16 @@
----
-# PersistentVolume for Gitea data.
-# Uses hostPath at /data/gitea, size from vars.storage.gitea_size.
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: gitea-pv
+spec:
+  capacity:
+    storage: 5Gi
+  accessModes: [ReadWriteOnce]
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: ""
+  hostPath:
+    path: /data/gitea
+    type: DirectoryOrCreate
+  claimRef:
+    namespace: gitea
+    name: gitea-pvc

@@ -1,6 +1,3 @@
----
-# Kubernetes namespaces for the tunenumbers stack.
-# Applied in phase 03-namespaces-storage.
 apiVersion: v1
 kind: Namespace
 metadata:

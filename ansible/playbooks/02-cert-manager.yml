@@ -1,5 +1,31 @@
 ---
-# Phase 2: Install cert-manager for automatic TLS certificates.
-# - Apply the cert-manager CRDs and deployment via kubectl
-# - Wait for cert-manager pods to be ready
-# - Template and apply the ClusterIssuer for Let's Encrypt (staging + production)
+- name: Phase 2 — Install cert-manager
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Apply cert-manager CRDs and deployment
+      ansible.builtin.command: >
+        kubectl apply -f https://github.com/cert-manager/cert-manager/releases/latest/download/cert-manager.yaml
+      register: cm_apply
+      changed_when: "'created' in cm_apply.stdout or 'configured' in cm_apply.stdout"
+
+    - name: Wait for cert-manager webhook to be ready
+      ansible.builtin.command: >
+        kubectl -n cert-manager rollout status deployment/cert-manager-webhook --timeout=120s
+      changed_when: false
+
+    - name: Template ClusterIssuer manifest
+      ansible.builtin.template:
+        src: ../../k8s-manifests/cert-manager/clusterissuer.yml.j2
+        dest: /tmp/clusterissuer.yml
+        mode: "0644"
+
+    - name: Apply ClusterIssuer
+      ansible.builtin.command: kubectl apply -f /tmp/clusterissuer.yml
+      register: ci_apply
+      changed_when: "'created' in ci_apply.stdout or 'configured' in ci_apply.stdout"

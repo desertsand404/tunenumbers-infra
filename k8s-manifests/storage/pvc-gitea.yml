@@ -1,2 +1,12 @@
----
-# PersistentVolumeClaim for Gitea, bound to pv-gitea.
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: gitea-pvc
+  namespace: gitea
+spec:
+  accessModes: [ReadWriteOnce]
+  storageClassName: ""
+  volumeName: gitea-pv
+  resources:
+    requests:
+      storage: 5Gi

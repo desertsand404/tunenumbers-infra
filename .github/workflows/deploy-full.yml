@@ -1,4 +1,38 @@
-# Full deployment workflow.
-# Triggers: manual (workflow_dispatch).
-# Runs ansible-playbook site.yml against the production server.
-# Requires GitHub Secrets: SERVER_IP, SERVER_USER, SSH_PRIVATE_KEY, ANSIBLE_VAULT_PASSWORD.
+name: Full Deployment
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    env:
+      KUBECONFIG: /home/github-runner/.kube/config
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create secrets.yml from GitHub Secrets
+        run: |
+          cat > ansible/vars/secrets.yml <<EOF
+          ---
+          letsencrypt_email: "${{ secrets.LETSENCRYPT_EMAIL }}"
+          pg_password: "${{ secrets.PG_PASSWORD }}"
+          minio_root_user: "${{ secrets.MINIO_ROOT_USER }}"
+          minio_root_password: "${{ secrets.MINIO_ROOT_PASSWORD }}"
+          directus_admin_email: "${{ secrets.DIRECTUS_ADMIN_EMAIL }}"
+          directus_admin_password: "${{ secrets.DIRECTUS_ADMIN_PASSWORD }}"
+          directus_secret: "${{ secrets.DIRECTUS_SECRET }}"
+          gitea_admin_user: "${{ secrets.GITEA_ADMIN_USER }}"
+          gitea_admin_password: "${{ secrets.GITEA_ADMIN_PASSWORD }}"
+          gitea_admin_email: "${{ secrets.GITEA_ADMIN_EMAIL }}"
+          docker_config_json: "${{ secrets.DOCKER_CONFIG_JSON }}"
+          EOF
+
+      - name: Run full Ansible playbook
+        run: ansible-playbook ansible/playbooks/site.yml
+        working-directory: ${{ github.workspace }}
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f ansible/vars/secrets.yml

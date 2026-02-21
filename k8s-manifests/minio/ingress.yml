@@ -1,3 +1,24 @@
----
-# MinIO Ingress. Routes s3.tunenumbers.de to the MinIO service.
-# TLS via cert-manager ClusterIssuer.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: minio-ingress
+  namespace: tunenumbers
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - minio.tunenumbers.de
+      secretName: minio-tls
+  rules:
+    - host: minio.tunenumbers.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: minio
+                port:
+                  number: 9001
