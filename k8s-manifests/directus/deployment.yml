@@ -80,8 +80,8 @@ spec:
               memory: "256Mi"
               cpu: "200m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "768Mi"
+              cpu: "1000m"
           startupProbe:
             httpGet:
               path: /server/health
