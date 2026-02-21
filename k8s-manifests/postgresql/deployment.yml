@@ -14,11 +14,11 @@ spec:
         app: postgresql
     spec:
       securityContext:
-        fsGroup: 999
+        fsGroup: 70
       initContainers:
         - name: fix-permissions
           image: busybox:latest
-          command: ["sh", "-c", "chown -R 999:999 /var/lib/postgresql/data"]
+          command: ["sh", "-c", "chown -R 70:70 /var/lib/postgresql/data"]
           volumeMounts:
             - name: postgresql-data
               mountPath: /var/lib/postgresql/data

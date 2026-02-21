@@ -49,6 +49,11 @@
         kubectl -n {{ namespaces.app }} delete pods -l app=postgresql --force --grace-period=0 2>/dev/null || true
       changed_when: false
 
+    - name: Clean corrupted pgdata directory for fresh init
+      ansible.builtin.shell: |
+        rm -rf {{ storage.postgresql.path }}/pgdata/*
+      changed_when: true
+
     - name: Scale up PostgreSQL
       ansible.builtin.command: >
         kubectl -n {{ namespaces.app }} scale deployment/postgresql --replicas=1
