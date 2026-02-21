@@ -19,6 +19,8 @@ spec:
           ports:
             - containerPort: 8055
           env:
+            - name: PORT
+              value: "8055"
             - name: DB_CLIENT
               value: "pg"
             - name: DB_HOST
