@@ -52,6 +52,7 @@
     - name: Clean corrupted pgdata directory for fresh init
       ansible.builtin.shell: |
         rm -rf {{ storage.postgresql.path }}/pgdata/*
+      become: true
       changed_when: true
 
     - name: Scale up PostgreSQL
