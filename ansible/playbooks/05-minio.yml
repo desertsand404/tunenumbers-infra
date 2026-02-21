@@ -39,6 +39,11 @@
       register: minio_ing
       changed_when: "'created' in minio_ing.stdout or 'configured' in minio_ing.stdout"
 
+    - name: Restart MinIO deployment to pick up new secret
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout restart deployment/minio
+      changed_when: true
+
     - name: Wait for MinIO pod to be ready
       ansible.builtin.command: >
         kubectl -n {{ namespaces.app }} rollout status deployment/minio --timeout=120s
