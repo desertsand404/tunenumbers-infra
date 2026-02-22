@@ -33,14 +33,6 @@
         kubectl -n {{ namespaces.gitea }} wait --for=delete pod -l app=gitea --timeout=60s 2>/dev/null || true
       changed_when: false
 
-    - name: Clean Gitea data via temporary pod
-      ansible.builtin.shell: |
-        kubectl -n {{ namespaces.gitea }} run gitea-cleanup --rm -i --restart=Never \
-          --image=busybox:latest \
-          --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"gitea-pvc"}}],"containers":[{"name":"cleanup","image":"busybox:latest","command":["sh","-c","rm -rf /data/* && echo done"],"volumeMounts":[{"name":"data","mountPath":"/data"}]}]}}' \
-          2>/dev/null || true
-      changed_when: true
-
     - name: Scale up Gitea
       ansible.builtin.command: >
         kubectl -n {{ namespaces.gitea }} scale deployment/gitea --replicas=1
