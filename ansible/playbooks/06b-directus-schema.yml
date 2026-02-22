@@ -8,20 +8,6 @@
   environment:
     KUBECONFIG: "{{ kubeconfig_path }}"
   tasks:
-    - name: Get Directus pod ClusterIP service URL
-      ansible.builtin.set_fact:
-        directus_internal_url: "http://directus.{{ namespaces.app }}.svc.cluster.local:8055"
-
-    - name: Wait for Directus health endpoint
-      ansible.builtin.command: >
-        kubectl -n {{ namespaces.app }} exec deployment/directus --
-        wget -qO- http://localhost:8055/server/health
-      register: health_check
-      until: health_check.rc == 0
-      retries: 30
-      delay: 10
-      changed_when: false
-
     - name: Check if schema snapshot file exists
       ansible.builtin.stat:
         path: "{{ playbook_dir }}/../../directus-schema/snapshot.yaml"
