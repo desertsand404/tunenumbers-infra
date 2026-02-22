@@ -29,6 +29,8 @@ spec:
           env:
             - name: DIRECTUS_URL
               value: "http://directus:8055"
+            - name: PUBLIC_DIRECTUS_URL
+              value: "https://cms.tunenumbers.de"
             - name: HOST
               value: "0.0.0.0"
             - name: PORT
