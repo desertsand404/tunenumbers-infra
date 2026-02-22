@@ -58,10 +58,9 @@ spec:
               memory: "512Mi"
               cpu: "500m"
           readinessProbe:
-            httpGet:
-              path: /api/v1/version
+            tcpSocket:
               port: 3000
-            initialDelaySeconds: 30
+            initialDelaySeconds: 15
             periodSeconds: 10
       volumes:
         - name: gitea-data
