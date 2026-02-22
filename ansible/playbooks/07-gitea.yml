@@ -23,9 +23,32 @@
       register: gitea_ing
       changed_when: "'created' in gitea_ing.stdout or 'configured' in gitea_ing.stdout"
 
+    - name: Scale down Gitea to clear stuck replicas
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} scale deployment/gitea --replicas=0
+      changed_when: true
+
+    - name: Wait for Gitea pods to terminate
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.gitea }} wait --for=delete pod -l app=gitea --timeout=60s 2>/dev/null || true
+      changed_when: false
+
+    - name: Clean Gitea data via temporary pod
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.gitea }} run gitea-cleanup --rm -i --restart=Never \
+          --image=busybox:latest \
+          --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"gitea-pvc"}}],"containers":[{"name":"cleanup","image":"busybox:latest","command":["sh","-c","rm -rf /data/* && echo done"],"volumeMounts":[{"name":"data","mountPath":"/data"}]}]}}' \
+          2>/dev/null || true
+      changed_when: true
+
+    - name: Scale up Gitea
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.gitea }} scale deployment/gitea --replicas=1
+      changed_when: true
+
     - name: Wait for Gitea pod to be ready
       ansible.builtin.command: >
-        kubectl -n {{ namespaces.gitea }} rollout status deployment/gitea --timeout=120s
+        kubectl -n {{ namespaces.gitea }} rollout status deployment/gitea --timeout=180s
       changed_when: false
 
     - name: Check if Gitea admin user exists
