@@ -46,7 +46,7 @@
     - name: Check if Gitea admin user exists
       ansible.builtin.command: >
         kubectl -n {{ namespaces.gitea }} exec deployment/gitea --
-        su git -c "gitea admin user list --admin"
+        su git -c "gitea --config /data/gitea/conf/app.ini admin user list --admin"
       register: gitea_users
       changed_when: false
       failed_when: false
@@ -54,7 +54,7 @@
     - name: Create Gitea admin user
       ansible.builtin.command: >
         kubectl -n {{ namespaces.gitea }} exec deployment/gitea --
-        su git -c "gitea admin user create --username {{ gitea_admin_user }} --password {{ gitea_admin_password }} --email {{ gitea_admin_email }} --admin"
+        su git -c "gitea --config /data/gitea/conf/app.ini admin user create --username {{ gitea_admin_user }} --password {{ gitea_admin_password }} --email {{ gitea_admin_email }} --admin"
       when: gitea_admin_user not in gitea_users.stdout
       register: gitea_admin
       changed_when: "'created' in gitea_admin.stdout"
@@ -74,7 +74,7 @@
     - name: Generate Gitea runner registration token
       ansible.builtin.command: >
         kubectl -n {{ namespaces.gitea }} exec deployment/gitea --
-        su git -c "gitea actions generate-runner-token"
+        su git -c "gitea --config /data/gitea/conf/app.ini actions generate-runner-token"
       register: runner_token
       when: runner_secret_check.rc != 0
       changed_when: false
