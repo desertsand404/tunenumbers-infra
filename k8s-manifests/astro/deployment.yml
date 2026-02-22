@@ -28,7 +28,7 @@ spec:
             - containerPort: 4321
           env:
             - name: DIRECTUS_URL
-              value: "http://directus.tunenumbers.svc.cluster.local:8055"
+              value: "http://directus:8055"
             - name: HOST
               value: "0.0.0.0"
             - name: PORT
