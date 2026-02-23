@@ -1,0 +1,12 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: crowdsec-bouncer
+  namespace: tunenumbers
+spec:
+  plugin:
+    crowdsec:
+      enabled: true
+      crowdsecLapiScheme: http
+      crowdsecLapiHost: crowdsec-lapi.crowdsec.svc.cluster.local:8080
+      crowdsecLapiKey: "{{ crowdsec_lapi_key }}" # Wird via Ansible/Secret befüllt

@@ -1,0 +1,12 @@
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    experimental:
+      plugins:
+        crowdsec:
+          moduleName: "github.com/maxiere/traefik-bouncer"
+          version: "v0.7.2"

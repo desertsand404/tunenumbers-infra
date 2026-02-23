@@ -78,7 +78,13 @@ spec:
             - name: CORS_ENABLED
               value: "true"
             - name: CORS_ORIGIN
-              value: "https://tunenumbers.de"
+              value: "*"
+            - name: CORS_METHODS
+              value: "GET,POST,PATCH,PUT,DELETE,OPTIONS"
+            - name: CORS_ALLOWED_HEADERS
+              value: "Content-Type,Authorization,Range"
+            - name: CORS_EXPOSED_HEADERS
+              value: "Content-Range,Accept-Ranges,Content-Length"
           resources:
             requests:
               memory: "256Mi"

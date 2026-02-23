@@ -1,0 +1,11 @@
+- name: Phase 9 — Integrate CrowdSec with Traefik
+  hosts: localhost
+  tasks:
+    - name: Apply Traefik Plugin Config
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/traefik-config.yml
+
+    - name: Apply CrowdSec Middleware
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/crowdsec/middleware.yml
+
+    - name: Update Directus Ingress with Middleware
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/directus/ingress.yml
