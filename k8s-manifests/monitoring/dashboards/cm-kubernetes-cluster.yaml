@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-kubernetes-cluster
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  kubernetes-cluster.json: |
+    {
+      "annotations": { "list": [] },
+      "description": "Kubernetes cluster overview: nodes, pods, resources, disk IO",
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Current Connections",
+          "type": "stat",
+          "targets": [{ "expr": "sum(traefik_open_connections{entrypoint=~\"web|websecure\"})", "legendFormat": "", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "percent" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "id": 2,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Least CPU Idle",
+          "type": "stat",
+          "targets": [{ "expr": "sort_desc(min(avg(rate(node_cpu_seconds_total{mode=\"idle\"}[2m])) by (instance))) * 100", "legendFormat": "", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "green", "value": 0.5 }] }, "unit": "percentunit" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "id": 3,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Min Space",
+          "type": "stat",
+          "targets": [{ "expr": "min(node_filesystem_avail_bytes{mountpoint!~\".*(serviceaccount|proc|sys).*\"}/node_filesystem_size_bytes{mountpoint!~\".*(serviceaccount|proc|sys).*\"})", "legendFormat": "", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 0.2 }, { "color": "green", "value": 0.5 }] }, "unit": "percentunit" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "id": 4,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Min Mem",
+          "type": "stat",
+          "targets": [{ "expr": "min(node_memory_MemAvailable_bytes/node_memory_MemTotal_bytes)", "legendFormat": "", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "reqps" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+          "id": 5,
+          "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Request Rate",
+          "type": "stat",
+          "targets": [{ "expr": "sum(rate(traefik_entrypoint_requests_total{entrypoint=\"websecure\"}[10m]))", "legendFormat": "", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+          "id": 6,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Pod Restarts (15m)",
+          "type": "stat",
+          "targets": [{ "expr": "sum(delta(kube_pod_container_status_restarts_total[15m]) > 0)", "legendFormat": "", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 0, "y": 4 },
+          "id": 10,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Pods Running",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(kube_pod_status_phase{}) by (phase)", "legendFormat": "{{ phase }}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 8, "y": 4 },
+          "id": 11,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Load 1m",
+          "type": "timeseries",
+          "targets": [{ "expr": "node_load1", "legendFormat": "{{instance}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 8, "x": 16, "y": 4 },
+          "id": 12,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Memory Available",
+          "type": "timeseries",
+          "targets": [{ "expr": "node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes", "legendFormat": "{{instance}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percent" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "id": 20,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "CPU Idle %",
+          "type": "timeseries",
+          "targets": [{ "expr": "avg(rate(node_cpu_seconds_total{mode=\"idle\"}[2m])) by (instance) * 100", "legendFormat": "{{ instance }}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "id": 21,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Node Storage",
+          "type": "timeseries",
+          "targets": [{ "expr": "min(node_filesystem_avail_bytes{mountpoint!~\".*(serviceaccount|proc|sys|tmpfs).*\", device!=\"overlay\"}/node_filesystem_size_bytes{mountpoint!~\".*(serviceaccount|proc|sys|tmpfs).*\", device!=\"overlay\"}) by (device, instance)", "legendFormat": "{{device}} ({{instance}})", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "id": 30,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Disk IO Utilization",
+          "type": "timeseries",
+          "targets": [{ "expr": "rate(node_disk_io_time_seconds_total{device!~\"sr.*\"}[2m])", "legendFormat": "{{instance}} {{device}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "id": 31,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Top 5 Memory Intense Pods",
+          "type": "timeseries",
+          "targets": [{ "expr": "topk(5, sum(container_memory_usage_bytes{pod!=\"\",container!=\"\",container!=\"POD\"}) by (pod))", "legendFormat": "{{pod}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 28 },
+          "id": 40,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Top 5 CPU Containers",
+          "type": "timeseries",
+          "targets": [{ "expr": "topk(5, sum(rate(container_cpu_usage_seconds_total{pod!=\"\",container!=\"\",container!=\"POD\"}[$__rate_interval])) by (pod, container))", "legendFormat": "{{container}} in {{pod}}", "refId": "A" }]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "tags": ["kubernetes", "cluster", "infrastructure"],
+      "templating": {
+        "list": [
+          { "current": {}, "hide": 0, "includeAll": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "type": "datasource", "label": "Prometheus" }
+        ]
+      },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Kubernetes Cluster",
+      "uid": "os6Bh8Omk",
+      "version": 2
+    }

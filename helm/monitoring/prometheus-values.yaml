@@ -53,9 +53,6 @@ serverFiles:
         tls_config:
           insecure_skip_verify: true
         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
-      - job_name: 'traefik'
-        static_configs:
-          - targets: ['traefik.kube-system.svc.cluster.local:9100']
       - job_name: 'alloy-metrics'
         static_configs:
           - targets: ['alloy.monitoring.svc.cluster.local:12345']
@@ -71,6 +68,13 @@ serverFiles:
         static_configs:
           - targets: ['minio.tunenumbers.svc.cluster.local:9000']
         metrics_path: /minio/v2/metrics/cluster
+      - job_name: 'minio-bucket'
+        static_configs:
+          - targets: ['minio.tunenumbers.svc.cluster.local:9000']
+        metrics_path: /minio/v2/metrics/bucket
+      - job_name: 'postgres-exporter'
+        static_configs:
+          - targets: ['prometheus-postgres-exporter.monitoring.svc.cluster.local:9187']
       - job_name: 'gitea'
         static_configs:
           - targets: ['gitea-http.gitea.svc.cluster.local:3000']

@@ -29,9 +29,20 @@ jobs:
       - name: Verify Helm is available
         run: helm version
 
+      - name: Create secrets.yml for monitoring
+        run: |
+          cat > ansible/vars/secrets.yml <<'ENDOFFILE'
+          ---
+          pg_password: "${{ secrets.PG_PASSWORD }}"
+          ENDOFFILE
+
       - name: Run monitoring deployment playbook
         run: |
           ansible-playbook ansible/playbooks/09-monitoring.yml -v
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f ansible/vars/secrets.yml
 
       - name: Verify deployments
         run: |

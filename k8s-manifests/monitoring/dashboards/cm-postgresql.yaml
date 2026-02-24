@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: grafana-dashboard-minio-storage
+  name: grafana-dashboard-postgresql
   namespace: monitoring
   labels:
     grafana_dashboard: "1"
 data:
-  minio-storage.json: |
+  postgresql.json: |
     {
       "annotations": { "list": [] },
-      "description": "MinIO object storage metrics: bucket usage, API traffic, bandwidth and disk",
+      "description": "PostgreSQL database metrics: connections, transactions, cache, size, locks",
       "editable": true,
       "graphTooltip": 1,
       "id": null,
@@ -18,54 +18,54 @@ data:
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "fieldConfig": {
-            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "bytes" },
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 50 }, { "color": "red", "value": 80 }] }, "unit": "short" },
             "overrides": []
           },
           "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
           "id": 1,
           "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
-          "title": "Total Storage Used",
+          "title": "Active Connections",
           "type": "stat",
-          "targets": [{ "expr": "sum(minio_bucket_usage_total_bytes)", "legendFormat": "total", "refId": "A" }]
+          "targets": [{ "expr": "sum(pg_stat_activity_count{state=\"active\"})", "legendFormat": "active", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "fieldConfig": {
-            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 90 }] }, "unit": "percent", "min": 0, "max": 100 },
             "overrides": []
           },
           "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
           "id": 2,
           "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
-          "title": "Object Count",
+          "title": "Connection Usage %",
           "type": "stat",
-          "targets": [{ "expr": "sum(minio_bucket_usage_object_total)", "legendFormat": "objects", "refId": "A" }]
+          "targets": [{ "expr": "sum(pg_stat_activity_count) / pg_settings_max_connections * 100", "legendFormat": "%", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "fieldConfig": {
-            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent", "min": 0, "max": 100 },
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }, { "color": "yellow", "value": 90 }, { "color": "green", "value": 95 }] }, "unit": "percent", "min": 0, "max": 100 },
             "overrides": []
           },
           "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
           "id": 3,
           "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
-          "title": "Disk Usage %",
+          "title": "Cache Hit Ratio",
           "type": "stat",
-          "targets": [{ "expr": "(1 - minio_cluster_capacity_usable_free_bytes / minio_cluster_capacity_usable_total_bytes) * 100", "legendFormat": "%", "refId": "A" }]
+          "targets": [{ "expr": "sum(pg_stat_database_blks_hit) / (sum(pg_stat_database_blks_hit) + sum(pg_stat_database_blks_read) + 1) * 100", "legendFormat": "cache hit %", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "fieldConfig": {
-            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "s" },
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "bytes" },
             "overrides": []
           },
           "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
           "id": 4,
           "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
-          "title": "Uptime",
+          "title": "Database Size",
           "type": "stat",
-          "targets": [{ "expr": "minio_node_process_uptime_seconds", "legendFormat": "uptime", "refId": "A" }]
+          "targets": [{ "expr": "pg_database_size_bytes{datname=\"tunenumbers\"}", "legendFormat": "size", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -78,51 +78,69 @@ data:
           "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "title": "Container Restarts (1h)",
           "type": "stat",
-          "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"tunenumbers\",pod=~\"minio.*\"}[1h]))", "legendFormat": "restarts", "refId": "A" }]
+          "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"tunenumbers\",pod=~\"postgresql.*\"}[1h]))", "legendFormat": "restarts", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
-          "id": 10,
-          "options": { "tooltip": { "mode": "multi" } },
-          "title": "Bucket Storage Breakdown",
-          "type": "timeseries",
-          "targets": [{ "expr": "minio_bucket_usage_total_bytes", "legendFormat": "{{bucket}}", "refId": "A" }]
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 20, "y": 0 },
+          "id": 6,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Active Locks",
+          "type": "stat",
+          "targets": [{ "expr": "sum(pg_locks_count{mode!=\"AccessShareLock\"})", "legendFormat": "locks", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
           "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
-          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
-          "id": 11,
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "id": 10,
           "options": { "tooltip": { "mode": "multi" } },
-          "title": "API Request Rate by Operation",
+          "title": "Transactions per Second",
           "type": "timeseries",
           "targets": [
-            { "expr": "sum(rate(minio_s3_requests_total[$__rate_interval])) by (api_name)", "legendFormat": "{{api_name}}", "refId": "A" }
+            { "expr": "rate(pg_stat_database_xact_commit{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "commits", "refId": "A" },
+            { "expr": "rate(pg_stat_database_xact_rollback{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "rollbacks", "refId": "B" }
           ]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
-          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
-          "id": 20,
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "id": 11,
           "options": { "tooltip": { "mode": "multi" } },
-          "title": "API Errors by Operation",
+          "title": "Active Connections over Time",
           "type": "timeseries",
-          "targets": [{ "expr": "sum(rate(minio_s3_requests_errors_total[$__rate_interval])) by (api_name)", "legendFormat": "{{api_name}}", "refId": "A" }]
+          "targets": [
+            { "expr": "sum(pg_stat_activity_count{state=\"active\"})", "legendFormat": "active", "refId": "A" },
+            { "expr": "sum(pg_stat_activity_count{state=\"idle\"})", "legendFormat": "idle", "refId": "B" },
+            { "expr": "sum(pg_stat_activity_count{state=\"idle in transaction\"})", "legendFormat": "idle in tx", "refId": "C" }
+          ]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
-          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "id": 20,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Dead Tuples (need VACUUM)",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(pg_stat_user_tables_n_dead_tup) by (relname)", "legendFormat": "{{relname}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
           "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
           "id": 21,
           "options": { "tooltip": { "mode": "multi" } },
-          "title": "Bandwidth (In / Out)",
+          "title": "Rows Read / Written",
           "type": "timeseries",
           "targets": [
-            { "expr": "sum(rate(minio_s3_traffic_received_bytes[$__rate_interval]))", "legendFormat": "In", "refId": "A" },
-            { "expr": "sum(rate(minio_s3_traffic_sent_bytes[$__rate_interval]))", "legendFormat": "Out", "refId": "B" }
+            { "expr": "rate(pg_stat_database_tup_fetched{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "rows fetched", "refId": "A" },
+            { "expr": "rate(pg_stat_database_tup_inserted{datname=\"tunenumbers\"}[$__rate_interval]) + rate(pg_stat_database_tup_updated{datname=\"tunenumbers\"}[$__rate_interval]) + rate(pg_stat_database_tup_deleted{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "rows written", "refId": "B" }
           ]
         },
         {
@@ -133,7 +151,7 @@ data:
           "options": { "tooltip": { "mode": "multi" } },
           "title": "CPU Usage",
           "type": "timeseries",
-          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"tunenumbers\",pod=~\"minio.*\",container!=\"\",container!=\"POD\"}[$__rate_interval])) by (pod) * 100", "legendFormat": "{{pod}}", "refId": "A" }]
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"tunenumbers\",pod=~\"postgresql.*\",container!=\"\",container!=\"POD\"}[$__rate_interval])) by (pod) * 100", "legendFormat": "{{pod}}", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -143,7 +161,7 @@ data:
           "options": { "tooltip": { "mode": "multi" } },
           "title": "Memory Usage",
           "type": "timeseries",
-          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=\"tunenumbers\",pod=~\"minio.*\",container!=\"\",container!=\"POD\"}) by (pod)", "legendFormat": "{{pod}}", "refId": "A" }]
+          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=\"tunenumbers\",pod=~\"postgresql.*\",container!=\"\",container!=\"POD\"}) by (pod)", "legendFormat": "{{pod}}", "refId": "A" }]
         },
         {
           "datasource": { "type": "loki", "uid": "${lokids}" },
@@ -152,12 +170,12 @@ data:
           "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
           "title": "Error Logs",
           "type": "logs",
-          "targets": [{ "expr": "{namespace=\"tunenumbers\", pod=~\"minio.*\"} |~ \"(?i)(error|warn|fatal)\"", "refId": "A" }]
+          "targets": [{ "expr": "{namespace=\"tunenumbers\", pod=~\"postgresql.*\"} |~ \"(?i)(error|fatal|panic)\"", "refId": "A" }]
         }
       ],
       "refresh": "30s",
       "schemaVersion": 38,
-      "tags": ["tunenumbers", "minio", "storage"],
+      "tags": ["tunenumbers", "postgresql", "database"],
       "templating": {
         "list": [
           { "current": {}, "hide": 0, "includeAll": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "type": "datasource", "label": "Prometheus" },
@@ -167,7 +185,7 @@ data:
       "time": { "from": "now-1h", "to": "now" },
       "timepicker": {},
       "timezone": "browser",
-      "title": "MinIO Object Storage",
-      "uid": "tunenumbers-minio",
+      "title": "PostgreSQL",
+      "uid": "tunenumbers-postgresql",
       "version": 1
     }

@@ -1,0 +1,25 @@
+config:
+  datasource:
+    host: postgresql.tunenumbers.svc.cluster.local
+    port: "5432"
+    user: postgres
+    passwordSecret:
+      name: postgres-exporter-secret
+      key: password
+    database: tunenumbers
+    sslmode: disable
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 100m
+    memory: 128Mi
+
+service:
+  type: ClusterIP
+  port: 9187
+
+serviceMonitor:
+  enabled: false

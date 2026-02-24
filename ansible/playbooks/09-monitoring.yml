@@ -32,6 +32,12 @@
         release: alloy
         version: "1.6.0"
         values_file: "{{ playbook_dir }}/../../helm/monitoring/alloy-values.yaml"
+      - repo_name: prometheus-community
+        repo_url: https://prometheus-community.github.io/helm-charts
+        chart: prometheus-community/prometheus-postgres-exporter
+        release: prometheus-postgres-exporter
+        version: "7.5.0"
+        values_file: "{{ playbook_dir }}/../../helm/monitoring/postgres-exporter-values.yaml"
 
   tasks:
     - name: Clear any pending Helm release locks
@@ -66,6 +72,14 @@
             --from-literal=admin-password='YOUR_SECURE_PASSWORD' \
             -n monitoring
       when: grafana_secret.rc != 0
+
+    - name: Create postgres-exporter secret
+      ansible.builtin.shell: |
+        kubectl create secret generic postgres-exporter-secret \
+          --from-literal=password="{{ pg_password }}" \
+          -n {{ monitoring_namespace }} --dry-run=client -o yaml | kubectl apply -f -
+      changed_when: true
+      no_log: true
 
     - name: Add Helm repositories
       ansible.builtin.command:
