@@ -1,0 +1,178 @@
+admin:
+  existingSecret: grafana-admin-secret
+  userKey: admin-user
+  passwordKey: admin-password
+
+persistence:
+  enabled: true
+  size: 1Gi
+  storageClassName: local-path
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 300m
+    memory: 256Mi
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: false
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://prometheus-server.monitoring.svc.cluster.local
+        access: proxy
+        isDefault: true
+        jsonData:
+          timeInterval: "30s"
+      - name: Loki
+        type: loki
+        url: http://loki.monitoring.svc.cluster.local:3100
+        access: proxy
+
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+      - name: default
+        orgId: 1
+        folder: ''
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards/default
+
+dashboards:
+  default:
+    node-exporter-full:
+      gnetId: 1860
+      revision: 37
+      datasource: Prometheus
+    kubernetes-cluster:
+      gnetId: 7249
+      revision: 1
+      datasource: Prometheus
+    traefik:
+      gnetId: 17347
+      revision: 9
+      datasource: Prometheus
+    loki-logs:
+      gnetId: 13639
+      revision: 2
+      datasource: Loki
+
+grafana.ini:
+  server:
+    domain: monitoring.tunenumbers.de
+    root_url: https://monitoring.tunenumbers.de
+  unified_alerting:
+    enabled: true
+
+alerting:
+  contactpoints.yaml:
+    apiVersion: 1
+    contactPoints:
+      - orgId: 1
+        name: default-email
+        receivers:
+          - uid: default-email
+            type: email
+            settings:
+              addresses: admin@tunenumbers.de
+  rules.yaml:
+    apiVersion: 1
+    groups:
+      - orgId: 1
+        name: infrastructure
+        folder: Alerts
+        interval: 1m
+        rules:
+          - uid: disk-usage-high
+            title: "Disk Usage > 85%"
+            condition: C
+            for: 5m
+            data:
+              - refId: A
+                datasourceUid: Prometheus
+                model:
+                  expr: "100 - (node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'} * 100)"
+              - refId: C
+                datasourceUid: __expr__
+                model:
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [85]
+            annotations:
+              summary: "Disk usage above 85%"
+          - uid: crashloop-backoff
+            title: "Pod CrashLoopBackOff"
+            condition: C
+            for: 2m
+            data:
+              - refId: A
+                datasourceUid: Prometheus
+                model:
+                  expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
+              - refId: C
+                datasourceUid: __expr__
+                model:
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [0]
+            annotations:
+              summary: "Pod {{ $labels.pod }} in CrashLoopBackOff"
+          - uid: cert-expiry
+            title: "TLS Cert Expiry < 14 days"
+            condition: C
+            for: 1h
+            data:
+              - refId: A
+                datasourceUid: Prometheus
+                model:
+                  expr: "(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
+              - refId: C
+                datasourceUid: __expr__
+                model:
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: lt
+                        params: [14]
+            annotations:
+              summary: "Certificate {{ $labels.name }} expires in < 14 days"
+          - uid: memory-high
+            title: "Memory Usage > 90%"
+            condition: C
+            for: 5m
+            data:
+              - refId: A
+                datasourceUid: Prometheus
+                model:
+                  expr: "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100"
+              - refId: C
+                datasourceUid: __expr__
+                model:
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [90]
+            annotations:
+              summary: "Node memory usage above 90%"

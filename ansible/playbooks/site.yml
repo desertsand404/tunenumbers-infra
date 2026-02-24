@@ -28,3 +28,6 @@
 
 - name: Phase 8 — Deploy Astro frontend
   ansible.builtin.import_playbook: 08-astro.yml
+
+- name: Phase 9 - Deploy Monitoring
+  ansible.builtin.import_playbook: 09-monitoring.yml

@@ -1,0 +1,66 @@
+server:
+  retention: "14d"
+  extraArgs:
+    enable-feature: "remote-write-receiver"
+  global:
+    scrape_interval: 30s
+    evaluation_interval: 30s
+  persistentVolume:
+    enabled: true
+    size: 10Gi
+    storageClass: "local-path"
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1Gi
+  service:
+    type: ClusterIP
+  ingress:
+    enabled: false
+
+prometheus-node-exporter:
+  enabled: false
+
+prometheus-pushgateway:
+  enabled: false
+
+kube-state-metrics:
+  enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 100m
+      memory: 128Mi
+
+alertmanager:
+  enabled: false
+
+serverFiles:
+  prometheus.yml:
+    global:
+      scrape_interval: 30s
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+      - job_name: 'kube-state-metrics'
+        static_configs:
+          - targets: ['prometheus-kube-state-metrics.monitoring.svc.cluster.local:8080']
+      - job_name: 'k3s-metrics'
+        static_configs:
+          - targets: ['10.0.0.2:10250']
+        scheme: https
+        tls_config:
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      - job_name: 'traefik'
+        static_configs:
+          - targets: ['traefik.kube-system.svc.cluster.local:9100']
+      - job_name: 'alloy-metrics'
+        static_configs:
+          - targets: ['alloy.monitoring.svc.cluster.local:12345']

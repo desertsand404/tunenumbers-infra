@@ -1,0 +1,43 @@
+name: Deploy Monitoring Stack
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/monitoring/**'
+      - 'k8s-manifests/monitoring/**'
+      - 'ansible/playbooks/09-monitoring.yml'
+      - '.github/workflows/deploy-monitoring.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Monitoring
+    runs-on: self-hosted
+    environment: production
+    env:
+      KUBECONFIG: /home/github-runner/.kube/config
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify kubectl connectivity
+        run: kubectl cluster-info
+
+      - name: Verify Helm is available
+        run: helm version
+
+      - name: Run monitoring deployment playbook
+        run: |
+          ansible-playbook ansible/playbooks/09-monitoring.yml -v
+
+      - name: Verify deployments
+        run: |
+          echo "=== Pods ==="
+          kubectl get pods -n monitoring
+          echo "=== PVCs ==="
+          kubectl get pvc -n monitoring
+          echo "=== IngressRoute ==="
+          kubectl get ingressroute -n monitoring
