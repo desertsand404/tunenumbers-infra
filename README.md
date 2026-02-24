@@ -14,48 +14,77 @@ Infrastructure-as-Code for **tunenumbers.de** — deploys the full stack onto a 
 
 ## Prerequisites
 
-- **Ansible** >= 2.14 installed locally
-- **SSH access** to the target server (key-based)
-- A server running Ubuntu 22.04+ or Debian 12+
+- A Hetzner Cloud VPS running Ubuntu 22.04+ or Debian 12+
+- Two self-hosted GitHub Actions runners registered and running as systemd services on the VPS
+- GitHub repository secrets configured (see [GitHub Secrets](#github-secrets) below)
+
+No local tooling required — Ansible and kubectl run on the VPS via the self-hosted runner.
+Ansible is installed automatically by the workflow if not already present.
 
 ## Deployment Phases
 
-| # | Playbook                   | What it does                                  |
-|---|----------------------------|-----------------------------------------------|
-| 1 | `01-k3s.yml`              | Install K3s                                   |
-| 2 | `02-cert-manager.yml`     | Install cert-manager + ClusterIssuer          |
-| 3 | `03-namespaces-storage.yml` | Create namespaces, PVs, PVCs                |
-| 4 | `04-postgresql.yml`       | Deploy PostgreSQL                             |
-| 5 | `05-minio.yml`            | Deploy MinIO + init bucket                    |
-| 6 | `06-directus.yml`         | Deploy Directus                               |
-| 6b| `06b-directus-schema.yml` | Apply Directus schema                         |
-| 7 | `07-gitea.yml`            | Deploy Gitea + Actions runner                 |
-| 8 | `08-astro.yml`            | Deploy Astro frontend                         |
+| # | Playbook                     | What it does                                  |
+|---|------------------------------|-----------------------------------------------|
+| 1 | `01-k3s.yml`                | Install K3s                                   |
+| 2 | `02-cert-manager.yml`       | Install cert-manager + ClusterIssuer          |
+| 3 | `03-namespaces-storage.yml` | Create namespaces, PVs, PVCs                  |
+| 4 | `04-postgresql.yml`         | Deploy PostgreSQL                             |
+| 5 | `05-minio.yml`              | Deploy MinIO + init bucket                    |
+| 6 | `06-directus.yml`           | Deploy Directus                               |
+| 6b| `06b-directus-schema.yml`   | Apply Directus schema                         |
+| 7 | `07-gitea.yml`              | Deploy Gitea + Actions runner                 |
+| 8 | `08-astro.yml`              | Deploy Astro frontend                         |
+| 9 | `09-crowdsec-traefik.yml`   | Deploy CrowdSec + Traefik bouncer (security)  |
+
+`site.yml` runs phases 1–8 in sequence. Phase 9 is run separately.
 
 ## Quick Start
+
+### Full deployment (via GitHub Actions)
+
+Trigger the **Full Deployment** workflow from the Actions tab:
+
+```
+Actions → Full Deployment → Run workflow
+```
+
+This runs `ansible-playbook ansible/playbooks/site.yml` on the self-hosted runner.
+
+### Manifests-only deployment
+
+Push changes to `k8s-manifests/**` on `main` — the **Deploy Manifests Only** workflow
+triggers automatically and applies the updated manifests via `kubectl`.
+
+### Local run (on the VPS directly)
 
 ```bash
 # 1. Copy and fill in secrets
 cp ansible/vars/secrets.yml.example ansible/vars/secrets.yml
-# Edit secrets.yml with real values, then encrypt:
+# Edit secrets.yml with real values, then optionally encrypt:
 ansible-vault encrypt ansible/vars/secrets.yml
 
-# 2. Set server connection (or edit inventory/hosts.yml directly)
-export SERVER_IP=your.server.ip
-export SERVER_USER=deploy
-
-# 3. Run full deployment
-cd ansible
-ansible-playbook playbooks/site.yml --ask-vault-pass
+# 2. Run full deployment (from the repo root on the VPS)
+ansible-playbook ansible/playbooks/site.yml --ask-vault-pass
 ```
 
 ## GitHub Secrets
 
-For CI/CD via GitHub Actions, configure these repository secrets:
+Configure these repository secrets for CI/CD:
 
-| Secret                  | Description                          |
-|-------------------------|--------------------------------------|
-| `SERVER_IP`             | Target server IP address             |
-| `SERVER_USER`           | SSH user on the server               |
-| `SSH_PRIVATE_KEY`       | Private SSH key for authentication   |
-| `ANSIBLE_VAULT_PASSWORD`| Password to decrypt secrets.yml      |
+| Secret                    | Description                                   |
+|---------------------------|-----------------------------------------------|
+| `LETSENCRYPT_EMAIL`       | Email for Let's Encrypt certificate issuance  |
+| `PG_PASSWORD`             | PostgreSQL admin password                     |
+| `MINIO_ROOT_USER`         | MinIO root username                           |
+| `MINIO_ROOT_PASSWORD`     | MinIO root password                           |
+| `DIRECTUS_ADMIN_EMAIL`    | Directus admin email                          |
+| `DIRECTUS_ADMIN_PASSWORD` | Directus admin password                       |
+| `DIRECTUS_SECRET`         | Directus JWT secret                           |
+| `DIRECTUS_URL`            | Directus public URL                           |
+| `DIRECTUS_STATIC_TOKEN`   | Directus static API token                     |
+| `GITEA_ADMIN_USER`        | Gitea admin username                          |
+| `GITEA_ADMIN_PASSWORD`    | Gitea admin password                          |
+| `GITEA_ADMIN_EMAIL`       | Gitea admin email                             |
+| `GITEA_TOKEN`             | Gitea API token (for registry auth)           |
+| `GITEA_USERNAME`          | Gitea username (for registry auth)            |
+| `DOCKER_CONFIG_JSON`      | Docker config JSON for Gitea registry pull    |
