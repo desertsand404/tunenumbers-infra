@@ -3,3 +3,4 @@ ansible/vars/secrets.yml
 .env
 .DS_Store
 .vagrant
+CLAUDE.md
