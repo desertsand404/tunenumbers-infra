@@ -14,7 +14,10 @@ podSecurityContext:
   fsGroup: 472
 
 initChownData:
-  enabled: false
+  enabled: true
+  securityContext:
+    runAsUser: 0
+    runAsNonRoot: false
 
 resources:
   requests:
