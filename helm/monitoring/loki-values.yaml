@@ -52,6 +52,9 @@ resultsCache:
 lokiCanary:
   enabled: false
 
+test:
+  enabled: false
+
 gateway:
   enabled: false
 

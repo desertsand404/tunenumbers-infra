@@ -135,7 +135,7 @@ alerting:
                         type: gt
                         params: [0]
             annotations:
-              summary: "Pod {{ $labels.pod }} in CrashLoopBackOff"
+              summary: "Pod is in CrashLoopBackOff"
           - uid: cert-expiry
             title: "TLS Cert Expiry < 14 days"
             condition: C
@@ -155,7 +155,7 @@ alerting:
                         type: lt
                         params: [14]
             annotations:
-              summary: "Certificate {{ $labels.name }} expires in < 14 days"
+              summary: "Certificate expires in < 14 days"
           - uid: memory-high
             title: "Memory Usage > 90%"
             condition: C
