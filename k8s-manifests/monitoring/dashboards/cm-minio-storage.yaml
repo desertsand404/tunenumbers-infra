@@ -1,0 +1,173 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-minio-storage
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  minio-storage.json: |
+    {
+      "annotations": { "list": [] },
+      "description": "MinIO object storage metrics: bucket usage, API traffic, bandwidth and disk",
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "bytes" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Total Storage Used",
+          "type": "stat",
+          "targets": [{ "expr": "sum(minio_bucket_usage_total_bytes)", "legendFormat": "total", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "id": 2,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Object Count",
+          "type": "stat",
+          "targets": [{ "expr": "sum(minio_bucket_objects_count_fsnodes)", "legendFormat": "objects", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 70 }, { "color": "red", "value": 85 }] }, "unit": "percent", "min": 0, "max": 100 },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "id": 3,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Disk Usage %",
+          "type": "stat",
+          "targets": [{ "expr": "minio_node_disk_used_bytes / minio_node_disk_total_bytes * 100", "legendFormat": "%", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "s" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "id": 4,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Uptime",
+          "type": "stat",
+          "targets": [{ "expr": "minio_node_process_uptime_seconds", "legendFormat": "uptime", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+          "id": 5,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Container Restarts (1h)",
+          "type": "stat",
+          "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"tunenumbers\",pod=~\"minio.*\"}[1h]))", "legendFormat": "restarts", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "id": 10,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Bucket Storage Breakdown",
+          "type": "timeseries",
+          "targets": [{ "expr": "minio_bucket_usage_total_bytes", "legendFormat": "{{bucket}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "id": 11,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "API Request Rate by Operation",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum(rate(minio_s3_requests_total[$__rate_interval])) by (api_name)", "legendFormat": "{{api_name}}", "refId": "A" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 12 },
+          "id": 20,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "API Errors by Operation",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(rate(minio_s3_requests_errors_total[$__rate_interval])) by (api_name)", "legendFormat": "{{api_name}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "Bps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 12 },
+          "id": 21,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Bandwidth (In / Out)",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum(rate(minio_s3_traffic_received_bytes[$__rate_interval]))", "legendFormat": "In", "refId": "A" },
+            { "expr": "sum(rate(minio_s3_traffic_sent_bytes[$__rate_interval]))", "legendFormat": "Out", "refId": "B" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0 }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "id": 30,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"tunenumbers\",pod=~\"minio.*\",container!=\"\",container!=\"POD\"}[$__rate_interval])) by (pod) * 100", "legendFormat": "{{pod}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "id": 31,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=\"tunenumbers\",pod=~\"minio.*\",container!=\"\",container!=\"POD\"}) by (pod)", "legendFormat": "{{pod}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "loki", "uid": "${lokids}" },
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 28 },
+          "id": 40,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "title": "Error Logs",
+          "type": "logs",
+          "targets": [{ "expr": "{namespace=\"tunenumbers\", pod=~\"minio.*\"} |~ \"(?i)(error|warn|fatal)\"", "refId": "A" }]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "tags": ["tunenumbers", "minio", "storage"],
+      "templating": {
+        "list": [
+          { "current": {}, "hide": 0, "includeAll": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "type": "datasource", "label": "Prometheus" },
+          { "current": {}, "hide": 0, "includeAll": false, "name": "lokids", "options": [], "query": "loki", "refresh": 1, "type": "datasource", "label": "Loki" }
+        ]
+      },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "MinIO Object Storage",
+      "uid": "tunenumbers-minio",
+      "version": 1
+    }

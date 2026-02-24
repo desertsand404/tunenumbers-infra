@@ -49,6 +49,15 @@ datasources:
         url: http://loki.monitoring.svc.cluster.local:3100
         access: proxy
 
+sidecar:
+  dashboards:
+    enabled: true
+    label: grafana_dashboard
+    labelValue: "1"
+    folder: /tmp/dashboards
+    searchNamespace: monitoring
+    resource: configmap
+
 dashboardProviders:
   dashboardproviders.yaml:
     apiVersion: 1
@@ -61,6 +70,15 @@ dashboardProviders:
         editable: true
         options:
           path: /var/lib/grafana/dashboards/default
+      - name: tunenumbers-applications
+        orgId: 1
+        folder: 'tunenumbers Applications'
+        type: file
+        disableDeletion: false
+        editable: true
+        updateIntervalSeconds: 30
+        options:
+          path: /tmp/dashboards
 
 dashboards:
   default:

@@ -1,0 +1,170 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-directus-cms
+  namespace: monitoring
+  labels:
+    grafana_dashboard: "1"
+data:
+  directus-cms.json: |
+    {
+      "annotations": { "list": [] },
+      "description": "HTTP traffic, container resources and logs for Directus CMS",
+      "editable": true,
+      "graphTooltip": 1,
+      "id": null,
+      "links": [],
+      "panels": [
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "reqps" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+          "id": 1,
+          "options": { "colorMode": "background", "graphMode": "area", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "API Request Rate",
+          "type": "stat",
+          "targets": [{ "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\"}[$__rate_interval]))", "legendFormat": "req/s", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 }] }, "unit": "percent" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+          "id": 2,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Error Rate",
+          "type": "stat",
+          "targets": [{ "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"4..|5..\"}[$__rate_interval])) / sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) * 100", "legendFormat": "%", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 500 }, { "color": "red", "value": 2000 }] }, "unit": "ms" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 8, "y": 0 },
+          "id": 3,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "p95 Latency",
+          "type": "stat",
+          "targets": [{ "expr": "histogram_quantile(0.95, sum(rate(traefik_service_request_duration_seconds_bucket{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) by (le)) * 1000", "legendFormat": "p95", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 3 }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 12, "y": 0 },
+          "id": 4,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Container Restarts (1h)",
+          "type": "stat",
+          "targets": [{ "expr": "sum(increase(kube_pod_container_status_restarts_total{namespace=\"tunenumbers\",pod=~\"directus.*\"}[1h]))", "legendFormat": "restarts", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": {
+            "defaults": { "color": { "mode": "thresholds" }, "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }, "unit": "short" },
+            "overrides": []
+          },
+          "gridPos": { "h": 4, "w": 4, "x": 16, "y": 0 },
+          "id": 5,
+          "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
+          "title": "Running Pods",
+          "type": "stat",
+          "targets": [{ "expr": "count(kube_pod_status_ready{namespace=\"tunenumbers\",pod=~\"directus.*\",condition=\"true\"} == 1)", "legendFormat": "pods", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "reqps" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 4 },
+          "id": 10,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "API Request Rate by Status",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"2..\"}[$__rate_interval]))", "legendFormat": "2xx", "refId": "A" },
+            { "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"3..\"}[$__rate_interval]))", "legendFormat": "3xx", "refId": "B" },
+            { "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"4..\"}[$__rate_interval]))", "legendFormat": "4xx", "refId": "C" },
+            { "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"5..\"}[$__rate_interval]))", "legendFormat": "5xx", "refId": "D" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0, "max": 100 }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 4 },
+          "id": 11,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "HTTP Error Rate (%)",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"4..\"}[$__rate_interval])) / sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) * 100", "legendFormat": "4xx %", "refId": "A" },
+            { "expr": "sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\",code=~\"5..\"}[$__rate_interval])) / sum(rate(traefik_service_requests_total{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) * 100", "legendFormat": "5xx %", "refId": "B" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+          "id": 20,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "API Response Latency (p50 / p95 / p99)",
+          "type": "timeseries",
+          "targets": [
+            { "expr": "histogram_quantile(0.50, sum(rate(traefik_service_request_duration_seconds_bucket{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) by (le)) * 1000", "legendFormat": "p50", "refId": "A" },
+            { "expr": "histogram_quantile(0.95, sum(rate(traefik_service_request_duration_seconds_bucket{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) by (le)) * 1000", "legendFormat": "p95", "refId": "B" },
+            { "expr": "histogram_quantile(0.99, sum(rate(traefik_service_request_duration_seconds_bucket{service=~\"tunenumbers-directus.*\"}[$__rate_interval])) by (le)) * 1000", "legendFormat": "p99", "refId": "C" }
+          ]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "percent", "min": 0 }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+          "id": 30,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "CPU Usage",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"tunenumbers\",pod=~\"directus.*\",container!=\"\",container!=\"POD\"}[$__rate_interval])) by (pod) * 100", "legendFormat": "{{pod}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "${datasource}" },
+          "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+          "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+          "id": 31,
+          "options": { "tooltip": { "mode": "multi" } },
+          "title": "Memory Usage",
+          "type": "timeseries",
+          "targets": [{ "expr": "sum(container_memory_working_set_bytes{namespace=\"tunenumbers\",pod=~\"directus.*\",container!=\"\",container!=\"POD\"}) by (pod)", "legendFormat": "{{pod}}", "refId": "A" }]
+        },
+        {
+          "datasource": { "type": "loki", "uid": "${lokids}" },
+          "gridPos": { "h": 10, "w": 24, "x": 0, "y": 28 },
+          "id": 40,
+          "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true },
+          "title": "Error Logs",
+          "type": "logs",
+          "targets": [{ "expr": "{namespace=\"tunenumbers\", pod=~\"directus.*\"} |~ \"(?i)(error|warn|fatal)\"", "refId": "A" }]
+        }
+      ],
+      "refresh": "30s",
+      "schemaVersion": 38,
+      "tags": ["tunenumbers", "directus"],
+      "templating": {
+        "list": [
+          { "current": {}, "hide": 0, "includeAll": false, "name": "datasource", "options": [], "query": "prometheus", "refresh": 1, "type": "datasource", "label": "Prometheus" },
+          { "current": {}, "hide": 0, "includeAll": false, "name": "lokids", "options": [], "query": "loki", "refresh": 1, "type": "datasource", "label": "Loki" }
+        ]
+      },
+      "time": { "from": "now-1h", "to": "now" },
+      "timepicker": {},
+      "timezone": "browser",
+      "title": "Directus CMS",
+      "uid": "tunenumbers-directus",
+      "version": 1
+    }

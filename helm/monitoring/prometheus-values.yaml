@@ -59,3 +59,19 @@ serverFiles:
       - job_name: 'alloy-metrics'
         static_configs:
           - targets: ['alloy.monitoring.svc.cluster.local:12345']
+      - job_name: 'k3s-cadvisor'
+        static_configs:
+          - targets: ['10.0.0.2:10250']
+        scheme: https
+        metrics_path: /metrics/cadvisor
+        tls_config:
+          insecure_skip_verify: true
+        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+      - job_name: 'minio'
+        static_configs:
+          - targets: ['minio.tunenumbers.svc.cluster.local:9000']
+        metrics_path: /minio/v2/metrics/cluster
+      - job_name: 'gitea'
+        static_configs:
+          - targets: ['gitea-http.gitea.svc.cluster.local:3000']
+        metrics_path: /metrics
