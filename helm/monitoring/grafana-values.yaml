@@ -102,10 +102,16 @@ alerting:
             for: 5m
             data:
               - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
                 datasourceUid: Prometheus
                 model:
                   expr: "100 - (node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'} * 100)"
               - refId: C
+                relativeTimeRange:
+                  from: 0
+                  to: 0
                 datasourceUid: __expr__
                 model:
                   type: threshold
@@ -122,10 +128,16 @@ alerting:
             for: 2m
             data:
               - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
                 datasourceUid: Prometheus
                 model:
                   expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
               - refId: C
+                relativeTimeRange:
+                  from: 0
+                  to: 0
                 datasourceUid: __expr__
                 model:
                   type: threshold
@@ -142,10 +154,16 @@ alerting:
             for: 1h
             data:
               - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
                 datasourceUid: Prometheus
                 model:
                   expr: "(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
               - refId: C
+                relativeTimeRange:
+                  from: 0
+                  to: 0
                 datasourceUid: __expr__
                 model:
                   type: threshold
@@ -162,10 +180,16 @@ alerting:
             for: 5m
             data:
               - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
                 datasourceUid: Prometheus
                 model:
                   expr: "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100"
               - refId: C
+                relativeTimeRange:
+                  from: 0
+                  to: 0
                 datasourceUid: __expr__
                 model:
                   type: threshold
