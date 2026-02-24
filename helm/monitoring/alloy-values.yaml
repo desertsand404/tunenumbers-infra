@@ -71,6 +71,25 @@ alloy:
         forward_to = [prometheus.remote_write.prometheus.receiver]
       }
 
+  mounts:
+    extra:
+      - name: proc
+        mountPath: /host/proc
+        readOnly: true
+      - name: sys
+        mountPath: /host/sys
+        readOnly: true
+      - name: root
+        mountPath: /host/root
+        readOnly: true
+        mountPropagation: HostToContainer
+      - name: varlog
+        mountPath: /var/log
+        readOnly: true
+      - name: varlibdockercontainers
+        mountPath: /var/lib/docker/containers
+        readOnly: true
+
   resources:
     requests:
       cpu: 100m
@@ -98,23 +117,6 @@ controller:
       - name: varlibdockercontainers
         hostPath:
           path: /var/lib/docker/containers
-  extraVolumeMounts:
-    - name: proc
-      mountPath: /host/proc
-      readOnly: true
-    - name: sys
-      mountPath: /host/sys
-      readOnly: true
-    - name: root
-      mountPath: /host/root
-      readOnly: true
-      mountPropagation: HostToContainer
-    - name: varlog
-      mountPath: /var/log
-      readOnly: true
-    - name: varlibdockercontainers
-      mountPath: /var/lib/docker/containers
-      readOnly: true
 
 serviceAccount:
   create: true
