@@ -23,6 +23,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Install Ansible dependencies
+        run: |
+          pip3 install --quiet --upgrade kubernetes
+          ansible-galaxy collection install kubernetes.core --upgrade
+
       - name: Verify kubectl connectivity
         run: kubectl cluster-info
 
