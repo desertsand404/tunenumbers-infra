@@ -8,6 +8,14 @@ persistence:
   size: 1Gi
   storageClassName: local-path
 
+podSecurityContext:
+  runAsUser: 472
+  runAsGroup: 472
+  fsGroup: 472
+
+initChownData:
+  enabled: false
+
 resources:
   requests:
     cpu: 100m
