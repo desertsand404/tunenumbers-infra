@@ -55,7 +55,6 @@ datasources:
     datasources:
       - name: Prometheus
         type: prometheus
-        uid: prometheus
         url: http://prometheus-server.monitoring.svc.cluster.local
         access: proxy
         isDefault: true
@@ -63,7 +62,6 @@ datasources:
           timeInterval: "30s"
       - name: Loki
         type: loki
-        uid: loki
         url: http://loki.monitoring.svc.cluster.local:3100
         access: proxy
 
@@ -249,3 +247,29 @@ alerting:
                         params: [90]
             annotations:
               summary: "Node memory usage above 90%"
+          - uid: brute-force-new-ban
+            title: "New IP Banned — Brute Force"
+            condition: C
+            for: 0s
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 300
+                  to: 0
+                datasourceUid: Prometheus
+                model:
+                  expr: "increase(cs_active_decisions{type=\"ban\"}[5m])"
+              - refId: C
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [0]
+            annotations:
+              summary: "New IP banned for brute-force activity on tunenumbers.de"
