@@ -210,7 +210,7 @@
 
     - name: List restic snapshots
       ansible.builtin.shell: |
-        source {{ backup_env_file }}
+        . {{ backup_env_file }}
         {{ restic_bin }} snapshots
       register: snapshots_out
       changed_when: false
