@@ -30,30 +30,11 @@
 
     # ── Install restic ───────────────────────────────────────────────────────
 
-    - name: Check if restic is already installed
-      ansible.builtin.command:
-        cmd: "{{ restic_bin }} version"
-      register: restic_check
-      failed_when: false
-      changed_when: false
-
-    - name: Download and install restic binary
-      ansible.builtin.shell: |
-        ARCH=$(uname -m)
-        case "$ARCH" in
-          x86_64)  ARCH_NAME="amd64" ;;
-          aarch64) ARCH_NAME="arm64" ;;
-          *)        echo "Unsupported arch: $ARCH" && exit 1 ;;
-        esac
-        LATEST=$(curl -s https://api.github.com/repos/restic/restic/releases/latest \
-          | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
-        VERSION="${LATEST#v}"
-        URL="https://github.com/restic/restic/releases/download/${LATEST}/restic_${VERSION}_linux_${ARCH_NAME}.bz2"
-        curl -fsSL "$URL" | bunzip2 > /tmp/restic
-        install -m 0755 /tmp/restic {{ restic_bin }}
-        rm -f /tmp/restic
-      when: restic_check.rc != 0
-      changed_when: true
+    - name: Install restic via apt
+      ansible.builtin.apt:
+        name: restic
+        state: present
+        update_cache: false
 
     - name: Verify restic installation
       ansible.builtin.command:
