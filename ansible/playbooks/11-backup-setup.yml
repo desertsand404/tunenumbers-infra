@@ -69,12 +69,12 @@
         mode: "0600"
         content: |
           # restic repository and password
-          RESTIC_REPOSITORY="{{ backup_restic_repository }}"
-          RESTIC_PASSWORD="{{ backup_restic_password }}"
+          export RESTIC_REPOSITORY="{{ backup_restic_repository }}"
+          export RESTIC_PASSWORD="{{ backup_restic_password }}"
           # Optional: add S3 / SFTP credentials below as needed
-          # AWS_ACCESS_KEY_ID="..."
-          # AWS_SECRET_ACCESS_KEY="..."
-          # SFTP_COMMAND="ssh -i /root/.ssh/backup_id_ed25519 -o StrictHostKeyChecking=yes"
+          # export AWS_ACCESS_KEY_ID="..."
+          # export AWS_SECRET_ACCESS_KEY="..."
+          # export SFTP_COMMAND="ssh -i /root/.ssh/backup_id_ed25519 -o StrictHostKeyChecking=yes"
           {{ backup_restic_env_extra | default('') }}
       no_log: true
 
