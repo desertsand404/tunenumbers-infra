@@ -45,7 +45,7 @@ log "Starting PostgreSQL backup..."
 # pg_dump uses the POSTGRES_PASSWORD env var already set inside the container.
 # -Fc = custom format (compressed, selective restore possible)
 kubectl exec -n tunenumbers deployment/postgresql -- \
-  sh -c 'PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -U directus -Fc directus' \
+  sh -c 'PGPASSWORD="${POSTGRES_PASSWORD}" pg_dump -h 127.0.0.1 -U directus -Fc directus' \
   | restic backup \
       --stdin \
       --stdin-filename "postgresql-directus.dump" \
