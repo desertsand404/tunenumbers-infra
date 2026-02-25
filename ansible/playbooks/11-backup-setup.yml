@@ -11,7 +11,7 @@
     backup_script_src: "{{ playbook_dir }}/../../scripts/backup/backup.sh"
     backup_script_dest: /opt/backup/backup.sh
     backup_env_file: /etc/backup/env
-    restic_bin: /usr/local/bin/restic
+    restic_bin: /usr/bin/restic
 
   tasks:
     # ── Prerequisites check ──────────────────────────────────────────────────
