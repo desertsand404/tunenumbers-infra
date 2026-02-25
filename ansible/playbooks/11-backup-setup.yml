@@ -1,0 +1,246 @@
+---
+- name: Phase 11 — Backup setup (restic + systemd timer)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars_files:
+    - "{{ playbook_dir }}/../vars/secrets.yml"
+  environment:
+    KUBECONFIG: /home/github-runner/.kube/config
+  vars:
+    backup_script_src: "{{ playbook_dir }}/../../scripts/backup/backup.sh"
+    backup_script_dest: /opt/backup/backup.sh
+    backup_env_file: /etc/backup/env
+    restic_bin: /usr/local/bin/restic
+
+  tasks:
+    # ── Prerequisites check ──────────────────────────────────────────────────
+
+    - name: Verify backup_restic_repository is configured
+      ansible.builtin.fail:
+        msg: |
+          backup_restic_repository is not set in secrets.yml.
+          Add it following the pattern in secrets.yml.example and try again.
+      when: backup_restic_repository | default('') == ''
+
+    - name: Verify backup_restic_password is configured
+      ansible.builtin.fail:
+        msg: "backup_restic_password is not set in secrets.yml."
+      when: backup_restic_password | default('') == ''
+
+    # ── Install restic ───────────────────────────────────────────────────────
+
+    - name: Check if restic is already installed
+      ansible.builtin.command:
+        cmd: "{{ restic_bin }} version"
+      register: restic_check
+      failed_when: false
+      changed_when: false
+
+    - name: Download and install restic binary
+      ansible.builtin.shell: |
+        ARCH=$(uname -m)
+        case "$ARCH" in
+          x86_64)  ARCH_NAME="amd64" ;;
+          aarch64) ARCH_NAME="arm64" ;;
+          *)        echo "Unsupported arch: $ARCH" && exit 1 ;;
+        esac
+        LATEST=$(curl -s https://api.github.com/repos/restic/restic/releases/latest \
+          | python3 -c "import sys,json; print(json.load(sys.stdin)['tag_name'])")
+        VERSION="${LATEST#v}"
+        URL="https://github.com/restic/restic/releases/download/${LATEST}/restic_${VERSION}_linux_${ARCH_NAME}.bz2"
+        curl -fsSL "$URL" | bunzip2 > /tmp/restic
+        install -m 0755 /tmp/restic {{ restic_bin }}
+        rm -f /tmp/restic
+      when: restic_check.rc != 0
+      changed_when: true
+
+    - name: Verify restic installation
+      ansible.builtin.command:
+        cmd: "{{ restic_bin }} version"
+      changed_when: false
+
+    # ── Create backup directories ────────────────────────────────────────────
+
+    - name: Create /etc/backup directory (mode 0700, root only)
+      ansible.builtin.file:
+        path: /etc/backup
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+
+    - name: Create /opt/backup directory
+      ansible.builtin.file:
+        path: /opt/backup
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    # ── Write credentials file ───────────────────────────────────────────────
+
+    - name: Write /etc/backup/env (credentials, mode 0600)
+      ansible.builtin.copy:
+        dest: "{{ backup_env_file }}"
+        owner: root
+        group: root
+        mode: "0600"
+        content: |
+          # restic repository and password
+          RESTIC_REPOSITORY="{{ backup_restic_repository }}"
+          RESTIC_PASSWORD="{{ backup_restic_password }}"
+          # Optional: add S3 / SFTP credentials below as needed
+          # AWS_ACCESS_KEY_ID="..."
+          # AWS_SECRET_ACCESS_KEY="..."
+          # SFTP_COMMAND="ssh -i /root/.ssh/backup_id_ed25519 -o StrictHostKeyChecking=yes"
+          {{ backup_restic_env_extra | default('') }}
+      no_log: true
+
+    # ── Deploy backup script ─────────────────────────────────────────────────
+
+    - name: Deploy backup script to {{ backup_script_dest }}
+      ansible.builtin.copy:
+        src: "{{ backup_script_src }}"
+        dest: "{{ backup_script_dest }}"
+        owner: root
+        group: root
+        mode: "0750"
+
+    # ── systemd units ────────────────────────────────────────────────────────
+
+    - name: Create backup.service systemd unit
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/backup.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=tunenumbers.de — restic backup
+          After=network.target k3s.service
+          Requires=k3s.service
+
+          [Service]
+          Type=oneshot
+          ExecStart={{ backup_script_dest }}
+          User=root
+          Environment=KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+          StandardOutput=journal
+          StandardError=journal
+          SyslogIdentifier=backup
+
+          # Allow up to 30 minutes for a full backup run
+          TimeoutStartSec=1800
+
+    - name: Create backup.timer systemd unit (daily at 02:00 UTC)
+      ansible.builtin.copy:
+        dest: /etc/systemd/system/backup.timer
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=tunenumbers.de — daily backup timer
+
+          [Timer]
+          OnCalendar=*-*-* 02:00:00 UTC
+          Persistent=true
+          RandomizedDelaySec=5min
+
+          [Install]
+          WantedBy=timers.target
+
+    - name: Reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: Enable and start backup timer
+      ansible.builtin.systemd:
+        name: backup.timer
+        enabled: true
+        state: started
+
+    # ── Initialize restic repository ─────────────────────────────────────────
+
+    - name: Check if restic repository already exists
+      ansible.builtin.shell: |
+        source {{ backup_env_file }}
+        {{ restic_bin }} snapshots --no-lock 2>&1
+      register: restic_snapshots
+      failed_when: false
+      changed_when: false
+      no_log: true
+
+    - name: Initialize restic repository (first time only)
+      ansible.builtin.shell: |
+        source {{ backup_env_file }}
+        {{ restic_bin }} init
+      when: '"Is there a repository at the following location" in restic_snapshots.stderr or
+             "Fatal" in restic_snapshots.stderr or
+             restic_snapshots.rc != 0'
+      changed_when: true
+      no_log: true
+
+    # ── Run first backup to verify everything works ──────────────────────────
+
+    - name: Run first backup now (validates credentials and connectivity)
+      ansible.builtin.command:
+        cmd: systemctl start backup.service
+      changed_when: true
+
+    - name: Wait for backup to complete (up to 30 minutes)
+      ansible.builtin.command:
+        cmd: systemctl is-active backup.service
+      register: backup_active
+      until: backup_active.rc != 0
+      retries: 180
+      delay: 10
+      changed_when: false
+      failed_when: false
+
+    - name: Check backup service exit status
+      ansible.builtin.command:
+        cmd: systemctl is-failed backup.service
+      register: backup_failed
+      changed_when: false
+      failed_when: backup_failed.stdout == "failed"
+
+    - name: Show last backup journal output
+      ansible.builtin.command:
+        cmd: journalctl -u backup.service -n 30 --no-pager
+      changed_when: false
+      register: journal_out
+
+    - name: Print backup journal
+      ansible.builtin.debug:
+        msg: "{{ journal_out.stdout_lines }}"
+
+    # ── List snapshots to confirm ────────────────────────────────────────────
+
+    - name: List restic snapshots
+      ansible.builtin.shell: |
+        source {{ backup_env_file }}
+        {{ restic_bin }} snapshots
+      register: snapshots_out
+      changed_when: false
+      no_log: false
+
+    - name: Print snapshots
+      ansible.builtin.debug:
+        msg: "{{ snapshots_out.stdout_lines }}"
+
+    - name: Backup setup complete
+      ansible.builtin.debug:
+        msg: |
+          Backup setup is complete.
+
+          Schedule: daily at 02:00 UTC
+          Repository: {{ backup_restic_repository }}
+
+          Useful commands (run as root on the VPS):
+            systemctl status backup.timer        # check next run
+            systemctl start backup.service       # trigger manual backup
+            journalctl -u backup.service -f      # watch backup logs
+            restic snapshots                     # list all snapshots
+            restic check                         # verify integrity

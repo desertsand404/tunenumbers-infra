@@ -34,3 +34,6 @@
 
 - name: Phase 10 — Brute-force protection
   ansible.builtin.import_playbook: 10-brute-force-protection.yml
+
+- name: Phase 11 — Backup setup
+  ansible.builtin.import_playbook: 11-backup-setup.yml
