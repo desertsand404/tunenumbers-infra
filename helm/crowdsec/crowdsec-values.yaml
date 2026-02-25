@@ -3,13 +3,11 @@
 # Namespace: crowdsec
 # Release:   crowdsec
 #
-# Prerequisites:
-#   - Namespace 'crowdsec' must exist
-#   - Secret 'smtp-credentials' must exist in 'crowdsec' namespace
-#     (Ansible playbook 10-brute-force-protection.yml copies it from 'monitoring')
-#   - ConfigMaps crowdsec-parser-{directus,grafana,gitea},
-#     crowdsec-scenario-brute-force, crowdsec-email-notification
-#     must be applied before or together with this Helm upgrade
+# NOTE: lapi.extraVolumeMounts and lapi.initContainers are NOT applied by this
+# chart version. Email notification config (email.yaml) and profiles.yaml are
+# instead mounted via a kubectl patch in ansible/playbooks/10-brute-force-protection.yml
+# after every helm upgrade. The patch uses Secret 'crowdsec-notification-config'
+# which Ansible creates with SMTP credentials rendered from 'smtp-credentials'.
 
 # ── LAPI (Local API — decision engine) ──────────────────────────────────────
 lapi:
@@ -18,8 +16,6 @@ lapi:
 
   metrics:
     enabled: true
-    # serviceMonitor: false — Prometheus Operator not in use; scrape added via
-    # prometheus-values.yaml extraScrapeConfigs instead.
     serviceMonitor:
       enabled: false
 
@@ -30,103 +26,6 @@ lapi:
     limits:
       cpu: 200m
       memory: 256Mi
-
-  # Inject SMTP credentials from the Secret copied by the Ansible playbook.
-  # Used by the notification-setup init container (envsubst substitution).
-  env:
-    - name: SMTP_HOST
-      valueFrom:
-        secretKeyRef:
-          name: smtp-credentials
-          key: smtp_host
-    - name: SMTP_PORT
-      valueFrom:
-        secretKeyRef:
-          name: smtp-credentials
-          key: smtp_port
-    - name: SMTP_USER
-      valueFrom:
-        secretKeyRef:
-          name: smtp-credentials
-          key: smtp_user
-    - name: SMTP_PASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: smtp-credentials
-          key: smtp_password
-    - name: SMTP_FROM
-      valueFrom:
-        secretKeyRef:
-          name: smtp-credentials
-          key: smtp_from
-
-  # Init container: substitute ${SMTP_*} placeholders in the email notification
-  # template and write the result to a shared emptyDir that is mounted over
-  # /etc/crowdsec/notifications/ in the main LAPI container.
-  initContainers:
-    - name: notification-setup
-      image: busybox:1.36
-      command: ["/bin/sh", "-c"]
-      args:
-        - |
-          sed \
-            -e "s|\${SMTP_HOST}|${SMTP_HOST}|g" \
-            -e "s|\${SMTP_PORT}|${SMTP_PORT}|g" \
-            -e "s|\${SMTP_USER}|${SMTP_USER}|g" \
-            -e "s|\${SMTP_PASSWORD}|${SMTP_PASSWORD}|g" \
-            -e "s|\${SMTP_FROM}|${SMTP_FROM}|g" \
-            /tmp/email-template.yaml > /etc/crowdsec-notifications/email.yaml
-          echo "Notification config written."
-      env:
-        - name: SMTP_HOST
-          valueFrom:
-            secretKeyRef:
-              name: smtp-credentials
-              key: smtp_host
-        - name: SMTP_PORT
-          valueFrom:
-            secretKeyRef:
-              name: smtp-credentials
-              key: smtp_port
-        - name: SMTP_USER
-          valueFrom:
-            secretKeyRef:
-              name: smtp-credentials
-              key: smtp_user
-        - name: SMTP_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: smtp-credentials
-              key: smtp_password
-        - name: SMTP_FROM
-          valueFrom:
-            secretKeyRef:
-              name: smtp-credentials
-              key: smtp_from
-      volumeMounts:
-        - name: email-notification-template
-          mountPath: /tmp/email-template.yaml
-          subPath: email-template.yaml
-        - name: notifications-dir
-          mountPath: /etc/crowdsec-notifications
-
-  extraVolumes:
-    # Template ConfigMap (placeholders substituted by init container)
-    - name: email-notification-template
-      configMap:
-        name: crowdsec-email-notification
-    # emptyDir filled by init container; mounted over /etc/crowdsec/notifications/
-    - name: notifications-dir
-      emptyDir: {}
-
-  extraVolumeMounts:
-    # Overlay /etc/crowdsec/notifications/ with the emptyDir populated by initContainer
-    - name: notifications-dir
-      mountPath: /etc/crowdsec/notifications
-    # Override profiles.yaml to add email notification on every ban
-    - name: email-notification-template
-      mountPath: /etc/crowdsec/profiles.yaml
-      subPath: profiles.yaml
 
 # ── Agent (DaemonSet — reads pod log files on each node) ────────────────────
 agent:
@@ -161,7 +60,7 @@ agent:
         type: gitea
 
   # Mount custom parsers and scenario from ConfigMaps.
-  # Parsers go into /etc/crowdsec/parsers/s01-parse/ so they run in the parse stage.
+  # Parsers go into /etc/crowdsec/parsers/s01-parse/ (parse stage).
   # Scenario goes into /etc/crowdsec/scenarios/.
   extraVolumes:
     - name: parser-directus
