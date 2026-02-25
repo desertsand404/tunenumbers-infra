@@ -3,11 +3,10 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  become: true
   vars_files:
     - "{{ playbook_dir }}/../vars/secrets.yml"
   environment:
-    KUBECONFIG: /home/github-runner/.kube/config
+    KUBECONFIG: /etc/rancher/k3s/k3s.yaml
   vars:
     backup_script_src: "{{ playbook_dir }}/../../scripts/backup/backup.sh"
     backup_script_dest: /opt/backup/backup.sh
