@@ -1,0 +1,54 @@
+# Grafana alerting provisioning: brute-force ban alert.
+# Applied as a ConfigMap in the 'monitoring' namespace with label grafana_alert=1.
+# The Grafana alerts sidecar (enabled in grafana-values.yaml) auto-loads this.
+#
+# The Ansible playbook (10-brute-force-protection.yml) applies this file as:
+#   kubectl create configmap grafana-alert-brute-force \
+#     --from-file=brute-force-alert.yaml \
+#     --namespace=monitoring --dry-run=client -o yaml | kubectl apply -f -
+# And then labels it: kubectl label configmap ... grafana_alert=1 -n monitoring
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: security
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: brute-force-new-ban
+        title: "New IP Banned — Brute Force"
+        condition: C
+        # Fire immediately (for: 0s) — each new ban should alert right away.
+        for: 0s
+        annotations:
+          summary: "A new IP has been banned for brute-force activity on tunenumbers.de"
+          description: "CrowdSec detected 5+ failed login attempts and added a new ban decision."
+        labels:
+          severity: warning
+          team: ops
+        data:
+          # Query A: fetch active ban count from CrowdSec Prometheus exporter
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            # UID matches the explicit uid set in grafana-values.yaml datasources
+            datasourceUid: prometheus
+            model:
+              expr: "increase(cs_active_decisions{type=\"ban\"}[5m])"
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          # Expression C: threshold — alert if any new bans appeared in last 5 min
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: A
+              refId: C
+              conditions:
+                - evaluator:
+                    type: gt
+                    params: [0]

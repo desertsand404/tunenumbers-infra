@@ -30,12 +30,32 @@ service:
 ingress:
   enabled: false
 
+# SMTP credentials from the existing smtp-credentials Secret in the monitoring namespace.
+# These GF_SMTP_* env vars configure Grafana's built-in mailer for alert notifications.
+env:
+  GF_SMTP_ENABLED: "true"
+  GF_SMTP_HOST: "smtps.udag.de:465"
+  GF_SMTP_FROM_ADDRESS: "notification@tunenumbers.de"
+  GF_SMTP_FROM_NAME: "tunenumbers Monitoring"
+  GF_SMTP_SKIP_VERIFY: "false"
+
+envValueFrom:
+  GF_SMTP_USER:
+    secretKeyRef:
+      name: smtp-credentials
+      key: smtp_user
+  GF_SMTP_PASSWORD:
+    secretKeyRef:
+      name: smtp-credentials
+      key: smtp_password
+
 datasources:
   datasources.yaml:
     apiVersion: 1
     datasources:
       - name: Prometheus
         type: prometheus
+        uid: prometheus
         url: http://prometheus-server.monitoring.svc.cluster.local
         access: proxy
         isDefault: true
@@ -43,6 +63,7 @@ datasources:
           timeInterval: "30s"
       - name: Loki
         type: loki
+        uid: loki
         url: http://loki.monitoring.svc.cluster.local:3100
         access: proxy
 
@@ -52,6 +73,12 @@ sidecar:
     label: grafana_dashboard
     labelValue: "1"
     folder: /tmp/dashboards
+    searchNamespace: monitoring
+    resource: configmap
+  alerts:
+    enabled: true
+    label: grafana_alert
+    labelValue: "1"
     searchNamespace: monitoring
     resource: configmap
 

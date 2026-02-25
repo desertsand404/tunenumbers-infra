@@ -79,3 +79,9 @@ serverFiles:
         static_configs:
           - targets: ['gitea-http.gitea.svc.cluster.local:3000']
         metrics_path: /metrics
+      # CrowdSec LAPI Prometheus exporter (port 6060).
+      # Verify service name after Helm upgrade: kubectl get svc -n crowdsec
+      - job_name: 'crowdsec'
+        static_configs:
+          - targets: ['crowdsec-service.crowdsec.svc.cluster.local:6060']
+        metrics_path: /metrics

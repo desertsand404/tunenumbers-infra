@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crowdsec-parser-directus
+  namespace: crowdsec
+  labels:
+    crowdsec-parser: "1"
+data:
+  directus.yaml: |
+    #
+    # CrowdSec parser for Directus CMS (pino JSON logger via k3s containerd)
+    #
+    # Acquisition type label: type=directus
+    # Pod log path on host:
+    #   /var/log/pods/tunenumbers_directus-*/**/*.log
+    #
+    # Each line on disk is a containerd JSON wrapper:
+    #   {"log":"{\"level\":30,\"time\":1707000000000,\"msg\":\"\",\"url\":\"/auth/login\",\"method\":\"POST\",\"status\":401,\"ip\":\"1.2.3.4\",...}\n","stream":"stdout","time":"2024-01-15T10:30:00Z"}
+    #
+    filter: "evt.Parsed.program == 'directus' || evt.Parsed.type == 'directus'"
+    name: tunenumbers/directus-failed-login
+    description: "Parse Directus CMS failed login attempts from k3s containerd JSON-wrapped pod logs"
+    nodes:
+      # Node 1: Unwrap the containerd/k3s JSON envelope.
+      # Extracts the inner pino JSON string (with escaped quotes) into inner_log.
+      - grok:
+          pattern: '^\{"log":"(?P<inner_log>(?:[^"\\]|\\.)*)\\n?","stream":"[^"]*","time":"[^"]*"\}$'
+          apply_on: message
+        statics:
+          - target: evt.Parsed.inner_log
+            expression: "evt.GroksVars[\"inner_log\"]"
+
+      # Node 2: Match pino JSON – ip field before status field.
+      # Directus failed login: POST /auth/login returns 401.
+      # Pino field order is non-deterministic; two nodes cover both orderings.
+      - grok:
+          pattern: '"method":"POST".*"url":"\/auth\/login".*"ip":"(?P<source_ip>[0-9a-fA-F.:]+)".*"status":401'
+          apply_on: inner_log
+        statics:
+          - meta: log_type
+            value: failed_login
+          - meta: service
+            value: directus
+          - target: evt.SourceIp
+            expression: "evt.GroksVars[\"source_ip\"]"
+
+      # Node 3: Match pino JSON – status field before ip field.
+      - grok:
+          pattern: '"method":"POST".*"url":"\/auth\/login".*"status":401.*"ip":"(?P<source_ip>[0-9a-fA-F.:]+)"'
+          apply_on: inner_log
+        statics:
+          - meta: log_type
+            value: failed_login
+          - meta: service
+            value: directus
+          - target: evt.SourceIp
+            expression: "evt.GroksVars[\"source_ip\"]"
+
+    onsuccess: next_stage

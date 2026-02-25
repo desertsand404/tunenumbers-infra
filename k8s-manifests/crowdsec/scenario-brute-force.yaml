@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: crowdsec-scenario-brute-force
+  namespace: crowdsec
+  labels:
+    crowdsec-scenario: "1"
+data:
+  brute-force.yaml: |
+    #
+    # CrowdSec brute-force scenario for tunenumbers services.
+    # Bans an IP after 5 failed login events within 60 seconds.
+    # Covers Directus, Grafana, and Gitea (all set meta.log_type = failed_login).
+    #
+    type: leaky
+    name: tunenumbers/brute-force
+    description: "Brute force detection: 5+ failed logins per 60s (Directus, Grafana, Gitea)"
+    filter: "evt.Meta.log_type == 'failed_login'"
+
+    # Leaky bucket parameters:
+    # capacity = 5 events before overflow → ban triggered
+    # leakspeed = 12s means 1 event drains every 12s → full bucket empties in 60s
+    # An attacker sending 5+ events in 60s will overflow the bucket.
+    leakspeed: "12s"
+    capacity: 5
+
+    # Group by source IP so each IP gets its own bucket.
+    groupby: "evt.SourceIp"
+
+    # After triggering a ban, ignore further events from the same IP
+    # for 2 minutes to avoid alert storms.
+    blackhole: 2m
+
+    labels:
+      type: bruteforce
+      service: "{{evt.Meta.service}}"
+      remediation: true
