@@ -129,7 +129,7 @@
             'smtp_password: "' + pw + '"',
             'smtp_ssl: true',
             'sender: "' + fr + '"',
-            'receiver:',
+            'receiver_emails:',
             '  - admin@tunenumbers.de',
             'email_subject: "[tunenumbers] IP '
             + ob + 'range . ' + cb
