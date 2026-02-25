@@ -144,24 +144,33 @@
 
     # ── Initialize restic repository ─────────────────────────────────────────
 
+    - name: Create local repository directory if path is local
+      ansible.builtin.file:
+        path: "{{ backup_restic_repository }}"
+        state: directory
+        owner: root
+        group: root
+        mode: "0700"
+      when: not backup_restic_repository.startswith('sftp:') and
+            not backup_restic_repository.startswith('s3:') and
+            not backup_restic_repository.startswith('b2:') and
+            not backup_restic_repository.startswith('azure:') and
+            not backup_restic_repository.startswith('gs:')
+
     - name: Check if restic repository already exists
       ansible.builtin.shell: |
-        source {{ backup_env_file }}
+        . {{ backup_env_file }}
         {{ restic_bin }} snapshots --no-lock 2>&1
       register: restic_snapshots
       failed_when: false
       changed_when: false
-      no_log: true
 
     - name: Initialize restic repository (first time only)
       ansible.builtin.shell: |
-        source {{ backup_env_file }}
+        . {{ backup_env_file }}
         {{ restic_bin }} init
-      when: '"Is there a repository at the following location" in restic_snapshots.stderr or
-             "Fatal" in restic_snapshots.stderr or
-             restic_snapshots.rc != 0'
+      when: restic_snapshots.rc != 0
       changed_when: true
-      no_log: true
 
     # ── Run first backup to verify everything works ──────────────────────────
 
