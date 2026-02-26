@@ -52,7 +52,7 @@
 
     - name: Add CrowdSec Helm repository
       ansible.builtin.command:
-        cmd: helm repo add crowdsec https://crowdsec.github.io/helm-charts --force-update
+        cmd: helm repo add crowdsec https://crowdsecurity.github.io/helm-charts --force-update
       changed_when: true
 
     - name: Update Helm repositories
