@@ -8,36 +8,21 @@ metadata:
 data:
   grafana.yaml: |
     #
-    # CrowdSec parser for Grafana (structured key=value log format via k3s containerd)
+    # CrowdSec parser for Grafana (structured key=value log format)
     #
-    # Acquisition type label: type=grafana
-    # Pod log path on host:
-    #   /var/log/pods/monitoring_grafana-*/**/*.log
-    #
-    # Grafana 10.x/11.x emits structured key=value logs to stdout:
+    # Acquisition: k8s-native pod log acquisition (namespace=monitoring, podName=grafana-*, program=grafana)
+    # Logs are raw Grafana key=value lines (no containerd wrapper) via the k8s API:
     #   t=2024-01-15T10:30:00Z lvl=warn msg="Invalid username or password" logger=context remoteAddr=1.2.3.4 uname=admin
     #
-    # k3s containerd wraps these lines:
-    #   {"log":"t=2024-01-15T10:30:00Z lvl=warn msg=\"Invalid username or password\" ...\n","stream":"stdout","time":"..."}
-    #
-    filter: "evt.Parsed.program == 'grafana' || evt.Parsed.type == 'grafana'"
+    filter: "evt.Parsed.program == 'grafana'"
     name: tunenumbers/grafana-failed-login
-    description: "Parse Grafana failed login attempts from k3s containerd JSON-wrapped pod logs"
+    description: "Parse Grafana failed login attempts from raw key=value pod logs"
     nodes:
-      # Node 1: Unwrap the containerd/k3s JSON envelope.
-      # Extracts the inner Grafana log line into evt.Parsed.inner_log.
-      - grok:
-          pattern: '^\{"log":"(?P<inner_log>(?:[^"\\]|\\.)*)\\n?","stream":"[^"]*","time":"[^"]*"\}$'
-          apply_on: message
-        statics:
-          - target: evt.Parsed.inner_log
-            expression: "evt.GroksVars[\"inner_log\"]"
-
-      # Node 2: Match Grafana key=value log – msg before remoteAddr.
-      # Fields may appear in either order; two alternation branches handle both.
+      # Node 1: Match Grafana key=value log – msg before remoteAddr.
+      # Fields may appear in either order; two nodes handle both orderings.
       - grok:
           pattern: '(?i)msg="invalid username or password".*remoteAddr=(?P<source_ip>[0-9a-fA-F.:]+)'
-          apply_on: inner_log
+          apply_on: message
         statics:
           - meta: log_type
             value: failed_login
@@ -46,10 +31,10 @@ data:
           - target: evt.SourceIp
             expression: "evt.GroksVars[\"source_ip\"]"
 
-      # Node 3: Match Grafana key=value log – remoteAddr before msg.
+      # Node 2: Match Grafana key=value log – remoteAddr before msg.
       - grok:
           pattern: '(?i)remoteAddr=(?P<source_ip>[0-9a-fA-F.:]+).*msg="invalid username or password"'
-          apply_on: inner_log
+          apply_on: message
         statics:
           - meta: log_type
             value: failed_login

@@ -58,25 +58,21 @@ agent:
       cpu: 100m
       memory: 128Mi
 
-  # Log acquisition: watch pod log files directly from the node's /var/log/pods/.
-  # The glob patterns match k3s/containerd pod log directory structure:
-  #   /var/log/pods/<namespace>_<pod-name>-<hash>_<uid>/<container>/<num>.log
-  # Each matched line is a containerd JSON wrapper; our custom parsers handle unwrapping.
+  # Log acquisition: Kubernetes-native pod log acquisition via the k8s API.
+  # Logs are read as raw container stdout (no containerd JSON wrapper).
+  # The 'program' value sets evt.Parsed.program, used by our custom parsers.
   acquisition:
-    - filenames:
-        - /var/log/pods/tunenumbers_directus-*/**/*.log
-      labels:
-        type: directus
+    - namespace: tunenumbers
+      podName: directus-*
+      program: directus
 
-    - filenames:
-        - /var/log/pods/monitoring_grafana-*/**/*.log
-      labels:
-        type: grafana
+    - namespace: monitoring
+      podName: grafana-*
+      program: grafana
 
-    - filenames:
-        - /var/log/pods/gitea_gitea-*/**/*.log
-      labels:
-        type: gitea
+    - namespace: gitea
+      podName: gitea-*
+      program: gitea
 
   # Mount custom parsers and scenario from ConfigMaps.
   # Parsers go into /etc/crowdsec/parsers/s01-parse/ (parse stage).
