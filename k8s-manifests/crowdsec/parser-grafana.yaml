@@ -28,7 +28,7 @@ data:
             value: failed_login
           - meta: service
             value: grafana
-          - target: evt.SourceIp
+          - meta: source_ip
             expression: 'evt.Parsed["source_ip"]'
 
       # Node 2: Match Grafana key=value log – remoteAddr before msg.
@@ -40,7 +40,7 @@ data:
             value: failed_login
           - meta: service
             value: grafana
-          - target: evt.SourceIp
+          - meta: source_ip
             expression: 'evt.Parsed["source_ip"]'
 
     onsuccess: next_stage

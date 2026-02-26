@@ -25,7 +25,7 @@ data:
     capacity: 5
 
     # Group by source IP so each IP gets its own bucket.
-    groupby: "evt.SourceIp"
+    groupby: "evt.Meta.source_ip"
 
     # After triggering a ban, ignore further events from the same IP
     # for 2 minutes to avoid alert storms.

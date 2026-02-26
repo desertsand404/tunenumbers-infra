@@ -32,7 +32,7 @@ data:
             value: failed_login
           - meta: service
             value: gitea
-          - target: evt.SourceIp
+          - meta: source_ip
             expression: 'evt.Parsed["source_ip"]'
 
     onsuccess: next_stage

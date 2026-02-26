@@ -29,7 +29,7 @@ data:
             value: failed_login
           - meta: service
             value: directus
-          - target: evt.SourceIp
+          - meta: source_ip
             expression: 'evt.Parsed["source_ip"]'
 
       # Node 2: Match pino JSON – status field before ip field.
@@ -41,7 +41,7 @@ data:
             value: failed_login
           - meta: service
             value: directus
-          - target: evt.SourceIp
+          - meta: source_ip
             expression: 'evt.Parsed["source_ip"]'
 
     onsuccess: next_stage
