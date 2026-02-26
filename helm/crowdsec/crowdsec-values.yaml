@@ -62,7 +62,7 @@ agent:
   # The glob patterns match k3s/containerd pod log directory structure:
   #   /var/log/pods/<namespace>_<pod-name>-<hash>_<uid>/<container>/<num>.log
   # Each matched line is a containerd JSON wrapper; our custom parsers handle unwrapping.
-  acquis:
+  acquisition:
     - filenames:
         - /var/log/pods/tunenumbers_directus-*/**/*.log
       labels:
