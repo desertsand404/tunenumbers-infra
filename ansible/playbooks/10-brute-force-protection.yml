@@ -90,8 +90,8 @@
 
         # Use chr() so that {{ }} are built at Python runtime and never seen by
         # Ansible's Jinja2 engine during task rendering.
-        ob = chr(123) * 2   # {{
-        cb = chr(125) * 2   # }}
+        ob = chr(123) * 2   # open
+        cb = chr(125) * 2   # close
 
         def get_val(key):
             r = subprocess.run(
