@@ -33,6 +33,6 @@ data:
           - meta: service
             value: gitea
           - target: evt.SourceIp
-            expression: "evt.GroksVars[\"source_ip\"]"
+            expression: "evt.Parsed["source_ip"]"
 
     onsuccess: next_stage

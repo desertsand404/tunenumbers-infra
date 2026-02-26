@@ -30,7 +30,7 @@ data:
           - meta: service
             value: directus
           - target: evt.SourceIp
-            expression: "evt.GroksVars[\"source_ip\"]"
+            expression: "evt.Parsed["source_ip"]"
 
       # Node 2: Match pino JSON – status field before ip field.
       - grok:
@@ -42,6 +42,6 @@ data:
           - meta: service
             value: directus
           - target: evt.SourceIp
-            expression: "evt.GroksVars[\"source_ip\"]"
+            expression: "evt.Parsed["source_ip"]"
 
     onsuccess: next_stage

@@ -29,7 +29,7 @@ data:
           - meta: service
             value: grafana
           - target: evt.SourceIp
-            expression: "evt.GroksVars[\"source_ip\"]"
+            expression: "evt.Parsed["source_ip"]"
 
       # Node 2: Match Grafana key=value log – remoteAddr before msg.
       - grok:
@@ -41,6 +41,6 @@ data:
           - meta: service
             value: grafana
           - target: evt.SourceIp
-            expression: "evt.GroksVars[\"source_ip\"]"
+            expression: "evt.Parsed["source_ip"]"
 
     onsuccess: next_stage
