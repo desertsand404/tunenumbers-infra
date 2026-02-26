@@ -14,6 +14,18 @@ lapi:
   enabled: true
   replicas: 1
 
+  config:
+    config.yaml.local: |
+      api:
+        server:
+          auto_registration:
+            enabled: true
+            token: "${REGISTRATION_TOKEN}"
+            allowed_ranges:
+              - "10.0.0.0/8"    # Hetzner Private Network (vps1, babel-it)
+              - "10.42.0.0/16"  # K3s Pod Netzwerk Standard
+              - "127.0.0.1/32"
+
   metrics:
     enabled: true
     serviceMonitor:
@@ -30,6 +42,13 @@ lapi:
 # ── Agent (DaemonSet — reads pod log files on each node) ────────────────────
 agent:
   enabled: true
+
+  # NEU: Zwingt den Agenten, den Node-Namen statt des zufälligen Pod-Namens zu nutzen
+  env:
+    - name: MACHINE_ID
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
 
   resources:
     requests:
