@@ -84,94 +84,95 @@
     # This block runs after every helm upgrade (which would otherwise wipe the patch).
 
     - name: Create crowdsec-notification-config Secret with rendered SMTP credentials
-      ansible.builtin.shell: |
-        python3 << 'PYEOF'
-        import subprocess, base64, tempfile, os
+      ansible.builtin.shell:
+        cmd: |
+          python3 << 'PYEOF'
+          import subprocess, base64, tempfile, os
 
-        # Use chr() so that {{ }} are built at Python runtime and never seen by
-        # Ansible's Jinja2 engine during task rendering.
-        ob = chr(123) * 2   # open
-        cb = chr(125) * 2   # close
+          # Use chr() so that {{ }} are built at Python runtime and never seen by
+          # Ansible's Jinja2 engine during task rendering.
+          ob = chr(123) * 2   # open
+          cb = chr(125) * 2   # close
 
-        def get_val(key):
-            r = subprocess.run(
-                ['kubectl', 'get', 'secret', 'smtp-credentials',
-                 '-n', 'monitoring', '-o', 'jsonpath={.data.' + key + '}'],
-                capture_output=True, text=True, check=True)
-            return base64.b64decode(r.stdout.strip()).decode()
+          def get_val(key):
+              r = subprocess.run(
+                  ['kubectl', 'get', 'secret', 'smtp-credentials',
+                   '-n', 'monitoring', '-o', 'jsonpath={.data.' + key + '}'],
+                  capture_output=True, text=True, check=True)
+              return base64.b64decode(r.stdout.strip()).decode()
 
-        h  = get_val('smtp_host')
-        p  = get_val('smtp_port')
-        u  = get_val('smtp_user')
-        pw = get_val('smtp_password')
-        fr = get_val('smtp_from')
+          h  = get_val('smtp_host')
+          p  = get_val('smtp_port')
+          u  = get_val('smtp_user')
+          pw = get_val('smtp_password')
+          fr = get_val('smtp_from')
 
-        email_yaml = '\n'.join([
-            'type: email',
-            'name: email_default',
-            'log_level: info',
-            'timeout: 20s',
-            'format: |',
-            '  ' + ob + 'range . -' + cb,
-            '  A new IP has been banned on tunenumbers.de',
-            '',
-            '  IP:       ' + ob + '.Value' + cb,
-            '  Reason:   ' + ob + '.Scenario' + cb,
-            '  Duration: ' + ob + '.Duration' + cb,
-            '  Service:  ' + ob + '.Labels.service' + cb,
-            '',
-            '  To unblock: cscli decisions delete --ip ' + ob + '.Value' + cb,
-            '',
-            '  ' + ob + 'end -' + cb,
-            'smtp_host: "' + h + '"',
-            'smtp_port: ' + p,
-            'smtp_username: "' + u + '"',
-            'smtp_password: "' + pw + '"',
-            'smtp_ssl: true',
-            'sender: "' + fr + '"',
-            'receiver_emails:',
-            '  - admin@tunenumbers.de',
-            'email_subject: "[tunenumbers] IP '
-            + ob + 'range . ' + cb
-            + ob + '.Value' + cb
-            + ob + 'end' + cb
-            + ' banned - brute force"',
-        ]) + '\n'
+          email_yaml = '\n'.join([
+              'type: email',
+              'name: email_default',
+              'log_level: info',
+              'timeout: 20s',
+              'format: |',
+              '  ' + ob + 'range . -' + cb,
+              '  A new IP has been banned on tunenumbers.de',
+              '',
+              '  IP:       ' + ob + '.Value' + cb,
+              '  Reason:   ' + ob + '.Scenario' + cb,
+              '  Duration: ' + ob + '.Duration' + cb,
+              '  Service:  ' + ob + '.Labels.service' + cb,
+              '',
+              '  To unblock: cscli decisions delete --ip ' + ob + '.Value' + cb,
+              '',
+              '  ' + ob + 'end -' + cb,
+              'smtp_host: "' + h + '"',
+              'smtp_port: ' + p,
+              'smtp_username: "' + u + '"',
+              'smtp_password: "' + pw + '"',
+              'smtp_ssl: true',
+              'sender: "' + fr + '"',
+              'receiver_emails:',
+              '  - admin@tunenumbers.de',
+              'email_subject: "[tunenumbers] IP '
+              + ob + 'range . ' + cb
+              + ob + '.Value' + cb
+              + ob + 'end' + cb
+              + ' banned - brute force"',
+          ]) + '\n'
 
-        profiles_yaml = '\n'.join([
-            'name: default_ip_remediation',
-            'filters:',
-            '  - Alert.Remediation == true && Alert.GetScope() == "Ip"',
-            'decisions:',
-            '  - type: ban',
-            '    duration: 4h',
-            'notifications:',
-            '  - email_default',
-            'on_success: break',
-        ]) + '\n'
+          profiles_yaml = '\n'.join([
+              'name: default_ip_remediation',
+              'filters:',
+              '  - Alert.Remediation == true && Alert.GetScope() == "Ip"',
+              'decisions:',
+              '  - type: ban',
+              '    duration: 4h',
+              'notifications:',
+              '  - email_default',
+              'on_success: break',
+          ]) + '\n'
 
-        fe = tempfile.NamedTemporaryFile(mode='w', suffix='-email.yaml',   delete=False)
-        fp = tempfile.NamedTemporaryFile(mode='w', suffix='-profiles.yaml', delete=False)
-        fe.write(email_yaml);    fe.close()
-        fp.write(profiles_yaml); fp.close()
+          fe = tempfile.NamedTemporaryFile(mode='w', suffix='-email.yaml',   delete=False)
+          fp = tempfile.NamedTemporaryFile(mode='w', suffix='-profiles.yaml', delete=False)
+          fe.write(email_yaml);    fe.close()
+          fp.write(profiles_yaml); fp.close()
 
-        try:
-            dry = subprocess.run(
-                ['kubectl', 'create', 'secret', 'generic',
-                 'crowdsec-notification-config',
-                 '--namespace=crowdsec',
-                 '--from-file=email.yaml='    + fe.name,
-                 '--from-file=profiles.yaml=' + fp.name,
-                 '--dry-run=client', '-o', 'yaml'],
-                capture_output=True, text=True, check=True)
-            subprocess.run(
-                ['kubectl', 'apply', '-f', '-'],
-                input=dry.stdout, text=True, check=True)
-            print('Secret crowdsec-notification-config created/updated')
-        finally:
-            os.unlink(fe.name)
-            os.unlink(fp.name)
-        PYEOF
+          try:
+              dry = subprocess.run(
+                  ['kubectl', 'create', 'secret', 'generic',
+                   'crowdsec-notification-config',
+                   '--namespace=crowdsec',
+                   '--from-file=email.yaml='    + fe.name,
+                   '--from-file=profiles.yaml=' + fp.name,
+                   '--dry-run=client', '-o', 'yaml'],
+                  capture_output=True, text=True, check=True)
+              subprocess.run(
+                  ['kubectl', 'apply', '-f', '-'],
+                  input=dry.stdout, text=True, check=True)
+              print('Secret crowdsec-notification-config created/updated')
+          finally:
+              os.unlink(fe.name)
+              os.unlink(fp.name)
+          PYEOF
       no_log: true
       changed_when: true
 
