@@ -31,6 +31,8 @@ prometheus-pushgateway:
 
 kube-state-metrics:
   enabled: true
+  nodeSelector:
+    kubernetes.io/hostname: babel-it
   resources:
     requests:
       cpu: 10m
