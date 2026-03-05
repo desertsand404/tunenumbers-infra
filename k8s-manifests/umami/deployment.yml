@@ -13,6 +13,8 @@ spec:
       labels:
         app: umami
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: babel-it
       containers:
         - name: umami
           image: ghcr.io/umami-software/umami:postgresql-latest

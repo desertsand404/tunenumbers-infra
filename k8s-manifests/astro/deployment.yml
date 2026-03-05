@@ -18,6 +18,8 @@ spec:
       labels:
         app: astro-frontend
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: babel-it
       imagePullSecrets:
         - name: gitea-registry-secret
       containers:

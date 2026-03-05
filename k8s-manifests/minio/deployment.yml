@@ -13,6 +13,8 @@ spec:
       labels:
         app: minio
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: babel-it
       containers:
         - name: minio
           image: minio/minio:latest

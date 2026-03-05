@@ -13,6 +13,8 @@ spec:
       labels:
         app: gitea
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: babel-it
       securityContext:
         fsGroup: 1000
       initContainers:

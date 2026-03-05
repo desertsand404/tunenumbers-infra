@@ -13,6 +13,8 @@ spec:
       labels:
         app: directus
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: babel-it
       containers:
         - name: directus
           image: directus/directus:latest
