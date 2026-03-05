@@ -127,6 +127,7 @@ grafana.ini:
 alerting:
   contactpoints.yaml:
     apiVersion: 1
+    resetOnStart: true
     contactPoints:
       - orgId: 1
         name: default-email
