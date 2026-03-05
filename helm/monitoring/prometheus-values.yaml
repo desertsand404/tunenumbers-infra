@@ -1,4 +1,6 @@
 server:
+  nodeSelector:
+    kubernetes.io/hostname: vps1
   retention: "14d"
   extraArgs:
     web.enable-remote-write-receiver: ""
@@ -29,6 +31,8 @@ prometheus-pushgateway:
 
 kube-state-metrics:
   enabled: true
+  nodeSelector:
+    kubernetes.io/hostname: vps1
   resources:
     requests:
       cpu: 10m

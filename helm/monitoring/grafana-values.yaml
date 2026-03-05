@@ -24,6 +24,9 @@ resources:
     cpu: 300m
     memory: 256Mi
 
+nodeSelector:
+  kubernetes.io/hostname: vps1
+
 service:
   type: ClusterIP
 
