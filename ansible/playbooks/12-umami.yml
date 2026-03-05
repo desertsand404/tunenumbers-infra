@@ -1,0 +1,93 @@
+---
+- name: Phase 12 — Deploy Umami Analytics
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../vars/main.yml
+    - ../vars/secrets.yml
+  environment:
+    KUBECONFIG: "{{ kubeconfig_path }}"
+  tasks:
+    - name: Get PostgreSQL pod name
+      ansible.builtin.command: >
+        kubectl get pod -n {{ namespaces.app }} -l app=postgresql
+        -o jsonpath='{.items[0].metadata.name}'
+      register: pg_pod
+      changed_when: false
+
+    - name: Create umami database user (idempotent)
+      ansible.builtin.shell: |
+        kubectl exec -n {{ namespaces.app }} {{ pg_pod.stdout }} -- \
+          psql -U directus -d directus -tc \
+          "SELECT 1 FROM pg_roles WHERE rolname='umami'" | grep -q 1 || \
+        kubectl exec -n {{ namespaces.app }} {{ pg_pod.stdout }} -- \
+          psql -U directus -d directus -c \
+          "CREATE USER umami WITH PASSWORD '{{ umami_db_password }}';"
+      changed_when: false
+      no_log: true
+
+    - name: Create umami database (idempotent)
+      ansible.builtin.shell: |
+        kubectl exec -n {{ namespaces.app }} {{ pg_pod.stdout }} -- \
+          psql -U directus -d directus -tc \
+          "SELECT 1 FROM pg_database WHERE datname='umami'" | grep -q 1 || \
+        kubectl exec -n {{ namespaces.app }} {{ pg_pod.stdout }} -- \
+          psql -U directus -d directus -c \
+          "CREATE DATABASE umami OWNER umami;"
+      changed_when: false
+
+    - name: Template Umami secret
+      ansible.builtin.template:
+        src: ../../k8s-manifests/umami/secret.yml.j2
+        dest: /tmp/umami-secret.yml
+        mode: "0600"
+
+    - name: Apply Umami secret
+      ansible.builtin.command: kubectl apply -f /tmp/umami-secret.yml
+      register: umami_secret
+      changed_when: "'created' in umami_secret.stdout or 'configured' in umami_secret.stdout"
+
+    - name: Remove templated secret file
+      ansible.builtin.file:
+        path: /tmp/umami-secret.yml
+        state: absent
+
+    - name: Apply Umami deployment
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/umami/deployment.yml
+      register: umami_deploy
+      changed_when: "'created' in umami_deploy.stdout or 'configured' in umami_deploy.stdout"
+
+    - name: Apply Umami service
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/umami/service.yml
+      register: umami_svc
+      changed_when: "'created' in umami_svc.stdout or 'configured' in umami_svc.stdout"
+
+    - name: Apply Umami ingress
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/umami/ingress.yml
+      register: umami_ing
+      changed_when: "'created' in umami_ing.stdout or 'configured' in umami_ing.stdout"
+
+    - name: Scale down Umami to clear stuck replicas
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} scale deployment/umami --replicas=0
+      changed_when: true
+
+    - name: Wait for Umami pods to terminate
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.app }} wait --for=delete pod -l app=umami --timeout=60s 2>/dev/null || true
+      changed_when: false
+
+    - name: Force-delete any remaining Umami pods
+      ansible.builtin.shell: |
+        kubectl -n {{ namespaces.app }} delete pods -l app=umami --force --grace-period=0 2>/dev/null || true
+      changed_when: false
+
+    - name: Scale up Umami
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} scale deployment/umami --replicas=1
+      changed_when: true
+
+    - name: Wait for Umami pod to be ready
+      ansible.builtin.command: >
+        kubectl -n {{ namespaces.app }} rollout status deployment/umami --timeout=300s
+      changed_when: false

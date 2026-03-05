@@ -38,6 +38,8 @@ jobs:
           gitea_admin_password: "${{ secrets.GITEA_ADMIN_PASSWORD }}"
           gitea_admin_email: "${{ secrets.GITEA_ADMIN_EMAIL }}"
           docker_config_json: '${{ secrets.DOCKER_CONFIG_JSON }}'
+          umami_db_password: "${{ secrets.UMAMI_DB_PASSWORD }}"
+          umami_app_secret: "${{ secrets.UMAMI_APP_SECRET }}"
           ENDOFFILE
 
       - name: Apply namespaces
@@ -83,12 +85,23 @@ jobs:
           kubectl apply -f k8s-manifests/astro/service.yml
           kubectl apply -f k8s-manifests/astro/ingress.yml
 
+      - name: Template and apply Umami secret
+        run: |
+          ansible-playbook ansible/playbooks/12-umami.yml --tags secret 2>/dev/null || true
+
+      - name: Apply Umami manifests
+        run: |
+          kubectl apply -f k8s-manifests/umami/deployment.yml
+          kubectl apply -f k8s-manifests/umami/service.yml
+          kubectl apply -f k8s-manifests/umami/ingress.yml
+
       - name: Restart changed deployments
         run: |
           kubectl -n tunenumbers rollout restart deployment/postgresql
           kubectl -n tunenumbers rollout restart deployment/minio
           kubectl -n tunenumbers rollout restart deployment/directus
           kubectl -n tunenumbers rollout restart deployment/astro-frontend
+          kubectl -n tunenumbers rollout restart deployment/umami
           kubectl -n gitea rollout restart deployment/gitea
           kubectl -n gitea rollout restart deployment/gitea-runner
 

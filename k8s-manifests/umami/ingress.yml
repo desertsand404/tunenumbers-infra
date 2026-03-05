@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: umami-ingress
+  namespace: tunenumbers
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    traefik.ingress.kubernetes.io/router.middlewares: tunenumbers-crowdsec-bouncer@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - stats.tunenumbers.de
+      secretName: umami-tls
+  rules:
+    - host: stats.tunenumbers.de
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: umami
+                port:
+                  number: 3000

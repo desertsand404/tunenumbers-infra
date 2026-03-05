@@ -35,6 +35,8 @@ spec:
               value: "0.0.0.0"
             - name: PORT
               value: "4321"
+            - name: PUBLIC_UMAMI_WEBSITE_ID
+              value: ""
           resources:
             requests:
               memory: "128Mi"

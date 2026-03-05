@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.1.0] – 2026-03-05
 
+### Features
+
+- **Umami**: Self-hosted web analytics at stats.tunenumbers.de (replaces custom Directus tracking)
+
 ### Bugfixes
 
 - **Grafana**: Fix alert email recipient — add `resetOnStart` to ensure provisioned contact point overwrites stale DB entry

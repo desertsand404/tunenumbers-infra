@@ -10,6 +10,7 @@ Infrastructure-as-Code for **tunenumbers.de** — deploys the full stack onto a 
 | Directus   | cms.tunenumbers.de     | Headless CMS                   |
 | MinIO      | s3.tunenumbers.de      | S3-compatible object storage   |
 | Gitea      | git.tunenumbers.de     | Git hosting + CI/CD            |
+| Umami      | stats.tunenumbers.de   | Web Analytics                  |
 | PostgreSQL | (internal)             | Database for Directus & Gitea  |
 
 ## Prerequisites
@@ -35,8 +36,9 @@ Ansible is installed automatically by the workflow if not already present.
 | 7 | `07-gitea.yml`              | Deploy Gitea + Actions runner                 |
 | 8 | `08-astro.yml`              | Deploy Astro frontend                         |
 | 9 | `09-crowdsec-traefik.yml`   | Deploy CrowdSec + Traefik bouncer (security)  |
+| 12| `12-umami.yml`              | Deploy Umami Analytics                         |
 
-`site.yml` runs phases 1–8 in sequence. Phase 9 is run separately.
+`site.yml` runs phases 1–12 in sequence (except phase 9 which is run separately).
 
 ## Quick Start
 
@@ -88,3 +90,5 @@ Configure these repository secrets for CI/CD:
 | `GITEA_TOKEN`             | Gitea API token (for registry auth)           |
 | `GITEA_USERNAME`          | Gitea username (for registry auth)            |
 | `DOCKER_CONFIG_JSON`      | Docker config JSON for Gitea registry pull    |
+| `UMAMI_DB_PASSWORD`       | Umami PostgreSQL user password                |
+| `UMAMI_APP_SECRET`        | Umami application secret                      |
