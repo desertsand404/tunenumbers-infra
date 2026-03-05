@@ -31,8 +31,6 @@ prometheus-pushgateway:
 
 kube-state-metrics:
   enabled: true
-  nodeSelector:
-    kubernetes.io/hostname: vps1
   resources:
     requests:
       cpu: 10m
