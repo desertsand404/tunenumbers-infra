@@ -1,3 +1,4 @@
+# Grafana Helm values — monitoring on vps1
 admin:
   existingSecret: grafana-admin-secret
   userKey: admin-user
