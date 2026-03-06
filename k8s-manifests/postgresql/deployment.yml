@@ -5,6 +5,8 @@ metadata:
   namespace: tunenumbers
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: postgresql
@@ -15,6 +17,7 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/hostname: babel-it
+      terminationGracePeriodSeconds: 60
       securityContext:
         fsGroup: 70
       initContainers:
