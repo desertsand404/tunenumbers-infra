@@ -13,6 +13,8 @@ spec:
       labels:
         app: gitea-runner
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: babel-it
       serviceAccountName: gitea-runner
       containers:
         - name: runner
@@ -27,6 +29,9 @@ spec:
                   key: token
             - name: GITEA_RUNNER_LABELS
               value: "ubuntu-latest:docker://node:20"
+          volumeMounts:
+            - name: docker-sock
+              mountPath: /var/run/docker.sock
           resources:
             requests:
               memory: "256Mi"
@@ -34,3 +39,8 @@ spec:
             limits:
               memory: "1536Mi"
               cpu: "1000m"
+      volumes:
+        - name: docker-sock
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket
