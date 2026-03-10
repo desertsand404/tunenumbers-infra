@@ -92,3 +92,18 @@ Configure these repository secrets for CI/CD:
 | `DOCKER_CONFIG_JSON`      | Docker config JSON for Gitea registry pull    |
 | `UMAMI_DB_PASSWORD`       | Umami PostgreSQL user password                |
 | `UMAMI_APP_SECRET`        | Umami application secret                      |
+
+## Cluster Node Labels
+
+These labels must be applied once after any node is added or the cluster is reinstalled:
+
+```bash
+# Disable klipper-lb (svclb) on all nodes — Traefik uses hostPort instead
+kubectl label node babel-it svccontroller.k3s.cattle.io/enablelb=false --overwrite
+kubectl label node vps1    svccontroller.k3s.cattle.io/enablelb=false --overwrite
+```
+
+**Why:** k3s's built-in load balancer (klipper-lb) runs DaemonSet pods on all nodes and inserts
+iptables DNAT+MASQUERADE rules on ports 80/443. On vps1 this intercepts traffic before Caddy can
+handle it. On babel-it it masks real client IPs. Since Traefik uses `hostPort` to bind ports 80/443
+directly, klipper-lb is not needed and must be disabled on all nodes.

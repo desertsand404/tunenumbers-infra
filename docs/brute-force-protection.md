@@ -123,7 +123,7 @@ Subject: `[tunenumbers] IP <IP> banned - brute force`
 Body includes: IP, scenario, ban duration, service, and the unblock command.
 
 Grafana also fires a "New IP Banned — Brute Force" alert when
-`increase(cs_active_decisions{type="ban"}[5m]) > 0`.
+`increase(cs_active_decisions{action="ban"}[5m]) > 0`.
 
 ---
 

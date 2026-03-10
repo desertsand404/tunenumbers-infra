@@ -34,9 +34,9 @@ groups:
             # Reference datasource by name; Grafana resolves it to the actual UID.
             # NOTE: this rule is also provisioned via grafana-values.yaml alerting.rules.yaml
             # (authoritative). This file serves as a standalone reference copy.
-            datasourceUid: Prometheus
+            datasourceUid: prometheus
             model:
-              expr: "increase(cs_active_decisions{type=\"ban\"}[5m])"
+              expr: "sum(increase(cs_active_decisions{action=\"ban\"}[5m]))"
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A

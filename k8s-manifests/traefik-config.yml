@@ -6,9 +6,31 @@ metadata:
 spec:
   valuesContent: |-
     service:
-      externalTrafficPolicy: Local
+      type: LoadBalancer
+      spec:
+        externalTrafficPolicy: Local
+    nodeSelector:
+      kubernetes.io/hostname: babel-it
     experimental:
       plugins:
         crowdsec:
-          moduleName: "github.com/maxiere/traefik-bouncer"
-          version: "v0.7.2"
+          moduleName: "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+          version: "v1.5.1"
+    ports:
+      web:
+        hostPort: 80
+        forwardedHeaders:
+          trustedIPs:
+            - 127.0.0.1/32
+            - 10.0.0.0/24
+            - 10.42.0.0/16
+      websecure:
+        hostPort: 443
+        forwardedHeaders:
+          trustedIPs:
+            - 127.0.0.1/32
+            - 10.0.0.0/24
+            - 10.42.0.0/16
+    logs:
+      access:
+        enabled: true

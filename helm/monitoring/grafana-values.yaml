@@ -53,11 +53,15 @@ envValueFrom:
       name: smtp-credentials
       key: smtp_password
 
+plugins:
+  - yesoreyeram-infinity-datasource
+
 datasources:
   datasources.yaml:
     apiVersion: 1
     datasources:
       - name: Prometheus
+        uid: prometheus
         type: prometheus
         url: http://prometheus-server.monitoring.svc.cluster.local
         access: proxy
@@ -65,9 +69,16 @@ datasources:
         jsonData:
           timeInterval: "30s"
       - name: Loki
+        uid: loki
         type: loki
         url: http://loki.monitoring.svc.cluster.local:3100
         access: proxy
+      - name: CrowdSec LAPI
+        uid: crowdsec-lapi
+        type: yesoreyeram-infinity-datasource
+        access: proxy
+        jsonData:
+          global_queries: []
 
 sidecar:
   dashboards:
@@ -140,6 +151,15 @@ alerting:
             type: email
             settings:
               addresses: admin@tunenumbers.de
+  policies.yaml:
+    apiVersion: 1
+    resetOnStart: true
+    policies:
+      - orgId: 1
+        receiver: default-email
+        group_by:
+          - grafana_folder
+          - alertname
   rules.yaml:
     apiVersion: 1
     groups:
@@ -157,7 +177,7 @@ alerting:
                 relativeTimeRange:
                   from: 600
                   to: 0
-                datasourceUid: Prometheus
+                datasourceUid: prometheus
                 model:
                   expr: "100 - (node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'} * 100)"
               - refId: C
@@ -183,7 +203,7 @@ alerting:
                 relativeTimeRange:
                   from: 600
                   to: 0
-                datasourceUid: Prometheus
+                datasourceUid: prometheus
                 model:
                   expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
               - refId: C
@@ -209,7 +229,7 @@ alerting:
                 relativeTimeRange:
                   from: 600
                   to: 0
-                datasourceUid: Prometheus
+                datasourceUid: prometheus
                 model:
                   expr: "(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
               - refId: C
@@ -235,7 +255,7 @@ alerting:
                 relativeTimeRange:
                   from: 600
                   to: 0
-                datasourceUid: Prometheus
+                datasourceUid: prometheus
                 model:
                   expr: "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100"
               - refId: C
@@ -261,9 +281,9 @@ alerting:
                 relativeTimeRange:
                   from: 300
                   to: 0
-                datasourceUid: Prometheus
+                datasourceUid: prometheus
                 model:
-                  expr: "increase(cs_active_decisions{type=\"ban\"}[5m])"
+                  expr: "sum(increase(cs_active_decisions{action=\"ban\"}[5m]))"
               - refId: C
                 relativeTimeRange:
                   from: 0

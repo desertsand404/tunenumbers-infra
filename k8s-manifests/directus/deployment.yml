@@ -87,6 +87,8 @@ spec:
               value: "Content-Type,Authorization,Range"
             - name: CORS_EXPOSED_HEADERS
               value: "Content-Range,Accept-Ranges,Content-Length"
+            - name: IP_TRUST_PROXY
+              value: "true"
           resources:
             requests:
               memory: "256Mi"

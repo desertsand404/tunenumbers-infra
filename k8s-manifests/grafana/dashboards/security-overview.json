@@ -1,6 +1,6 @@
 {
   "annotations": { "list": [] },
-  "description": "CrowdSec brute-force protection: active bans, login failures, and unblock history",
+  "description": "CrowdSec brute-force protection: active bans, banned IPs, login failures, and unblock history",
   "editable": true,
   "graphTooltip": 1,
   "id": null,
@@ -26,7 +26,7 @@
       "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
       "title": "Active Bans",
       "type": "stat",
-      "targets": [{ "expr": "sum(cs_active_decisions{type=\"ban\"})", "legendFormat": "banned IPs", "refId": "A" }]
+      "targets": [{ "expr": "sum(cs_active_decisions{action=\"ban\"})", "legendFormat": "banned IPs", "refId": "A" }]
     },
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -41,15 +41,48 @@
       "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Count" }] },
       "title": "Active Bans by Scenario",
       "type": "table",
-      "targets": [{ "expr": "cs_active_decisions{type=\"ban\"}", "legendFormat": "", "refId": "A", "instant": true, "format": "table" }],
+      "targets": [{ "expr": "cs_active_decisions{action=\"ban\"}", "legendFormat": "", "refId": "A", "instant": true, "format": "table" }],
       "transformations": [
         { "id": "organize", "options": { "excludeByName": { "__name__": true, "job": true, "instance": true }, "renameByName": { "reason": "Scenario", "origin": "Origin" } } }
       ]
     },
     {
+      "datasource": { "type": "yesoreyeram-infinity-datasource", "uid": "crowdsec-lapi" },
+      "fieldConfig": {
+        "defaults": { "unit": "short" },
+        "overrides": []
+      },
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 5 },
+      "id": 30,
+      "options": { "showHeader": true, "sortBy": [{ "desc": true, "displayName": "Scenario" }], "footer": { "show": true, "countRows": true, "reducer": ["count"] } },
+      "title": "Banned IPs (CrowdSec Decisions)",
+      "type": "table",
+      "targets": [{
+        "refId": "A",
+        "type": "json",
+        "source": "url",
+        "format": "table",
+        "url": "http://crowdsec-service.crowdsec.svc.cluster.local:8080/v1/decisions",
+        "url_options": {
+          "method": "GET",
+          "headers": [
+            { "key": "X-Api-Key", "value": "REDACTED" }
+          ]
+        },
+        "root_selector": "",
+        "columns": [
+          { "selector": "value", "text": "IP", "type": "string" },
+          { "selector": "scenario", "text": "Scenario", "type": "string" },
+          { "selector": "origin", "text": "Origin", "type": "string" },
+          { "selector": "duration", "text": "Duration", "type": "string" },
+          { "selector": "type", "text": "Action", "type": "string" }
+        ]
+      }]
+    },
+    {
       "datasource": { "type": "loki", "uid": "${lokids}" },
       "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 15 },
       "id": 10,
       "options": { "tooltip": { "mode": "multi" } },
       "title": "Login Failures per Minute",
@@ -75,19 +108,19 @@
     {
       "datasource": { "type": "prometheus", "uid": "${datasource}" },
       "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "palette-classic" } }, "overrides": [] },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 15 },
       "id": 11,
       "options": { "tooltip": { "mode": "multi" } },
       "title": "Active Bans Over Time",
       "type": "timeseries",
       "targets": [
-        { "expr": "sum(cs_active_decisions{type=\"ban\"})", "legendFormat": "Total Bans", "refId": "A" },
-        { "expr": "cs_active_decisions{type=\"ban\"}", "legendFormat": "{{reason}}", "refId": "B" }
+        { "expr": "sum(cs_active_decisions{action=\"ban\"})", "legendFormat": "Total Bans", "refId": "A" },
+        { "expr": "cs_active_decisions{action=\"ban\"}", "legendFormat": "{{reason}}", "refId": "B" }
       ]
     },
     {
       "datasource": { "type": "loki", "uid": "${lokids}" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 13 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 23 },
       "id": 20,
       "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
       "title": "Unblock History (deleted decisions)",
@@ -96,7 +129,7 @@
     },
     {
       "datasource": { "type": "loki", "uid": "${lokids}" },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 21 },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 31 },
       "id": 21,
       "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
       "title": "CrowdSec Ban Events",
