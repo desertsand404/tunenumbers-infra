@@ -179,7 +179,7 @@ alerting:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "100 - (node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'} * 100)"
+                  expr: "max by (instance) (100 - (node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'} * 100))"
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -198,6 +198,7 @@ alerting:
             title: "Pod CrashLoopBackOff"
             condition: C
             for: 2m
+            noDataState: OK
             data:
               - refId: A
                 relativeTimeRange:
@@ -257,7 +258,7 @@ alerting:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "(1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100"
+                  expr: "max by (instance) ((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)"
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -276,6 +277,7 @@ alerting:
             title: "New IP Banned — Brute Force"
             condition: C
             for: 0s
+            noDataState: OK
             data:
               - refId: A
                 relativeTimeRange:
