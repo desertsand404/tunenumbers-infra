@@ -2,7 +2,7 @@ config:
   datasource:
     host: postgresql.tunenumbers.svc.cluster.local
     port: "5432"
-    user: postgres
+    user: exporter
     passwordSecret:
       name: postgres-exporter-secret
       key: password
