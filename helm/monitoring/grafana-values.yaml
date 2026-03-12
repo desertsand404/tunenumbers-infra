@@ -115,7 +115,7 @@ dashboardProviders:
         editable: true
         updateIntervalSeconds: 30
         options:
-          path: /tmp/dashboards
+          path: /var/lib/grafana/dashboards/tunenumbers
 
 dashboards:
   default:

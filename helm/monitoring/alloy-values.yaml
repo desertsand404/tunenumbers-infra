@@ -38,16 +38,24 @@ alloy:
           target_label  = "app"
         }
         rule {
-          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+          source_labels = ["__meta_kubernetes_namespace", "__meta_kubernetes_pod_name", "__meta_kubernetes_pod_uid"]
+          separator     = "_"
+          action        = "replace"
+          target_label  = "__pod_log_dir__"
+        }
+        rule {
+          source_labels = ["__pod_log_dir__", "__meta_kubernetes_pod_container_name"]
           separator     = "/"
-          regex         = "(.+)/(.+)/(.+)/(.+)"
-          replacement   = "/var/log/pods/${1}_${2}_${3}/${4}/*.log"
+          replacement   = "/var/log/pods/$1/*.log"
           action        = "replace"
           target_label  = "__path__"
         }
       }
+      local.file_match "pods" {
+        path_targets = discovery.relabel.pod_logs.output
+      }
       loki.source.file "pods" {
-        targets    = discovery.relabel.pod_logs.output
+        targets    = local.file_match.pods.targets
         forward_to = [loki.write.loki.receiver]
       }
       loki.write "loki" {
