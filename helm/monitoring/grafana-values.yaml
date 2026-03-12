@@ -334,4 +334,4 @@ alerting:
                         type: gt
                         params: [0]
             annotations:
-              summary: "New IP banned: {{ $labels.ip }} (brute-force on tunenumbers.de)"
+              summary: 'New IP banned: {{ "{{" }} $labels.ip {{ "}}" }} (brute-force on tunenumbers.de)'
