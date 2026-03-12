@@ -20,26 +20,26 @@ groups:
         # Fire immediately (for: 0s) — each new ban should alert right away.
         for: 0s
         annotations:
-          summary: "A new IP has been banned for brute-force activity on tunenumbers.de"
-          description: "CrowdSec detected 5+ failed login attempts and added a new ban decision."
+          summary: "New IP banned: {{ $labels.ip }} (brute-force on tunenumbers.de)"
+          description: "CrowdSec banned {{ $labels.ip }} after detecting repeated failed login attempts."
         labels:
           severity: warning
           team: ops
         data:
-          # Query A: fetch active ban count from CrowdSec Prometheus exporter
+          # Query A: count new bans per IP from CrowdSec LAPI logs via Loki.
+          # CrowdSec v1.7.x logs: level=info msg="new ban" ip=<IP> reason=... duration=...
+          # sum by (ip) creates one series per banned IP — ip appears as a label in the alert.
+          # NOTE: this rule is also provisioned via grafana-values.yaml alerting.rules.yaml
+          # (authoritative). This file serves as a standalone reference copy.
           - refId: A
             relativeTimeRange:
               from: 300
               to: 0
-            # Reference datasource by name; Grafana resolves it to the actual UID.
-            # NOTE: this rule is also provisioned via grafana-values.yaml alerting.rules.yaml
-            # (authoritative). This file serves as a standalone reference copy.
-            datasourceUid: prometheus
+            datasourceUid: loki
             model:
-              expr: "sum(increase(cs_active_decisions{action=\"ban\"}[5m]))"
-              intervalMs: 1000
-              maxDataPoints: 43200
+              expr: "sum by (ip) (count_over_time({namespace=\"crowdsec\"} |= \"new ban\" | logfmt | ip != \"\" [5m]))"
               refId: A
+              queryType: range
           # Expression B: reduce A (time series) to a single scalar value
           - refId: B
             relativeTimeRange:
