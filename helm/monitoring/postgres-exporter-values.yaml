@@ -6,7 +6,7 @@ config:
     passwordSecret:
       name: postgres-exporter-secret
       key: password
-    database: tunenumbers
+    database: directus
     sslmode: disable
 
 resources:
