@@ -89,7 +89,7 @@
       "type": "timeseries",
       "targets": [
         {
-          "expr": "sum(count_over_time({namespace=\"tunenumbers\", pod=~\"directus.*\"} |= \"\\\"status\\\":401\" |= \"\\\"url\\\":\\\"/auth/login\\\"\" [1m]))",
+          "expr": "sum(count_over_time({namespace=\"tunenumbers\", pod=~\"directus.*\"} |= \"/auth/login\" |= \"401\" [1m]))",
           "legendFormat": "Directus",
           "refId": "A"
         },
@@ -102,6 +102,11 @@
           "expr": "sum(count_over_time({namespace=\"gitea\"} |~ \"(?i)failed authentication|failed to authenticate\" [1m]))",
           "legendFormat": "Gitea",
           "refId": "C"
+        },
+        {
+          "expr": "sum(count_over_time({namespace=\"kube-system\", pod=~\"traefik.*\"} |= \"/api/v1/login\" |= \"401\" [1m]))",
+          "legendFormat": "MinIO",
+          "refId": "D"
         }
       ]
     },
@@ -135,6 +140,15 @@
       "title": "CrowdSec Ban Events",
       "type": "logs",
       "targets": [{ "expr": "{namespace=\"crowdsec\", container=\"crowdsec-lapi\"} |~ \"community-blocklist update|POST /v1/alerts\" | logfmt", "refId": "A" }]
+    },
+    {
+      "datasource": { "type": "loki", "uid": "${lokids}" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 39 },
+      "id": 22,
+      "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
+      "title": "MinIO Login Failures (via Traefik)",
+      "type": "logs",
+      "targets": [{ "expr": "{namespace=\"kube-system\", pod=~\"traefik.*\"} |= \"/api/v1/login\" |= \"401\"", "refId": "A" }]
     }
   ],
   "refresh": "30s",

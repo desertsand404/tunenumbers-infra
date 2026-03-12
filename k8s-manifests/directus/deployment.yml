@@ -89,6 +89,8 @@ spec:
               value: "Content-Range,Accept-Ranges,Content-Length"
             - name: IP_TRUST_PROXY
               value: "true"
+            - name: LOG_STYLE
+              value: "raw"
           resources:
             requests:
               memory: "256Mi"

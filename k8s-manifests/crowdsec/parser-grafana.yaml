@@ -10,18 +10,19 @@ data:
     #
     # CrowdSec parser for Grafana (structured key=value log format)
     #
-    # Acquisition: k8s-native pod log acquisition (namespace=monitoring, podName=grafana-*, program=grafana)
-    # Logs are raw Grafana key=value lines (no containerd wrapper) via the k8s API:
-    #   t=2024-01-15T10:30:00Z lvl=warn msg="Invalid username or password" logger=context remoteAddr=1.2.3.4 uname=admin
+    # Grafana 12.x login failure log format (from authn service):
+    #   logger=authn t=...Z level=warn msg="Failed to authenticate request" client=... error="invalid username or password" remoteAddr=1.2.3.4
+    #   OR (legacy context logger):
+    #   logger=context t=...Z level=warn msg="Invalid username or password" remoteAddr=1.2.3.4 uname=admin
     #
     filter: "evt.Parsed.program == 'grafana'"
     name: tunenumbers/grafana-failed-login
-    description: "Parse Grafana failed login attempts from raw key=value pod logs"
+    description: "Parse Grafana failed login attempts (Grafana 12.x, multiple log formats)"
     nodes:
-      # Node 1: Match Grafana key=value log – msg before remoteAddr.
-      # Fields may appear in either order; two nodes handle both orderings.
+      # Match any Grafana log line containing the invalid credentials string,
+      # followed by a remoteAddr field anywhere in the line.
       - grok:
-          pattern: '(?i)msg="invalid username or password".*remoteAddr=(?P<source_ip>[0-9a-fA-F.:]+)'
+          pattern: '(?i)(?:msg|error)="[^"]*invalid username or password[^"]*".*remoteAddr=(?P<source_ip>[0-9a-fA-F.:]+)'
           apply_on: message
         statics:
           - meta: log_type
@@ -31,9 +32,9 @@ data:
           - meta: source_ip
             expression: 'evt.Parsed["source_ip"]'
 
-      # Node 2: Match Grafana key=value log – remoteAddr before msg.
+      # remoteAddr before the invalid credentials string
       - grok:
-          pattern: '(?i)remoteAddr=(?P<source_ip>[0-9a-fA-F.:]+).*msg="invalid username or password"'
+          pattern: '(?i)remoteAddr=(?P<source_ip>[0-9a-fA-F.:]+).*(?:msg|error)="[^"]*invalid username or password[^"]*"'
           apply_on: message
         statics:
           - meta: log_type

@@ -74,6 +74,10 @@ agent:
       podName: gitea-*
       program: gitea
 
+    - namespace: kube-system
+      podName: traefik-*
+      program: traefik
+
   # Mount custom parsers and scenario from ConfigMaps.
   # Parsers go into /etc/crowdsec/parsers/s01-parse/ (parse stage).
   # Scenario goes into /etc/crowdsec/scenarios/.
@@ -90,6 +94,9 @@ agent:
     - name: scenario-brute-force
       configMap:
         name: crowdsec-scenario-brute-force
+    - name: parser-traefik-minio
+      configMap:
+        name: crowdsec-parser-traefik-minio
 
   extraVolumeMounts:
     - name: parser-directus
@@ -104,3 +111,6 @@ agent:
     - name: scenario-brute-force
       mountPath: /etc/crowdsec/scenarios/brute-force.yaml
       subPath: brute-force.yaml
+    - name: parser-traefik-minio
+      mountPath: /etc/crowdsec/parsers/s01-parse/traefik-minio.yaml
+      subPath: traefik-minio.yaml
