@@ -286,6 +286,17 @@ alerting:
                 datasourceUid: prometheus
                 model:
                   expr: "sum(increase(cs_active_decisions{action=\"ban\"}[5m]))"
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: sum
+                  settings:
+                    mode: ""
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -293,7 +304,7 @@ alerting:
                 datasourceUid: __expr__
                 model:
                   type: threshold
-                  expression: A
+                  expression: B
                   conditions:
                     - evaluator:
                         type: gt

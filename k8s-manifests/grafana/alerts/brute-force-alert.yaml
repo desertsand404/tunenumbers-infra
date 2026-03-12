@@ -40,6 +40,19 @@ groups:
               intervalMs: 1000
               maxDataPoints: 43200
               refId: A
+          # Expression B: reduce A (time series) to a single scalar value
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              refId: B
+              reducer: sum
+              settings:
+                mode: ""
           # Expression C: threshold — alert if any new bans appeared in last 5 min
           - refId: C
             relativeTimeRange:
@@ -48,7 +61,7 @@ groups:
             datasourceUid: __expr__
             model:
               type: threshold
-              expression: A
+              expression: B
               refId: C
               conditions:
                 - evaluator:
