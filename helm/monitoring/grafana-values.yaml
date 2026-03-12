@@ -180,6 +180,17 @@ alerting:
                 datasourceUid: prometheus
                 model:
                   expr: "max by (instance) (100 - (node_filesystem_avail_bytes{mountpoint='/'} / node_filesystem_size_bytes{mountpoint='/'} * 100))"
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  settings:
+                    mode: dropNN
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -187,7 +198,7 @@ alerting:
                 datasourceUid: __expr__
                 model:
                   type: threshold
-                  expression: A
+                  expression: B
                   conditions:
                     - evaluator:
                         type: gt
@@ -259,6 +270,17 @@ alerting:
                 datasourceUid: prometheus
                 model:
                   expr: "max by (instance) ((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)"
+              - refId: B
+                relativeTimeRange:
+                  from: 0
+                  to: 0
+                datasourceUid: __expr__
+                model:
+                  type: reduce
+                  expression: A
+                  reducer: last
+                  settings:
+                    mode: dropNN
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -266,7 +288,7 @@ alerting:
                 datasourceUid: __expr__
                 model:
                   type: threshold
-                  expression: A
+                  expression: B
                   conditions:
                     - evaluator:
                         type: gt
