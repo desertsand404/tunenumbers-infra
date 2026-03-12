@@ -78,7 +78,7 @@
     - name: Create postgres-exporter secret
       ansible.builtin.shell: |
         kubectl create secret generic postgres-exporter-secret \
-          --from-literal=password="{{ pg_password }}" \
+          --from-literal=password="{{ pg_exporter_password }}" \
           -n {{ monitoring_namespace }} --dry-run=client -o yaml | kubectl apply -f -
       changed_when: true
       no_log: true

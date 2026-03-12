@@ -34,6 +34,7 @@ jobs:
           cat > ansible/vars/secrets.yml <<'ENDOFFILE'
           ---
           pg_password: "${{ secrets.PG_PASSWORD }}"
+          pg_exporter_password: "${{ secrets.PG_EXPORTER_PASSWORD }}"
           ENDOFFILE
 
       - name: Run monitoring deployment playbook
