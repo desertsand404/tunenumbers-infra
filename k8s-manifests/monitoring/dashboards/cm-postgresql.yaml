@@ -65,7 +65,7 @@ data:
           "options": { "colorMode": "background", "graphMode": "none", "reduceOptions": { "calcs": ["lastNotNull"] } },
           "title": "Database Size",
           "type": "stat",
-          "targets": [{ "expr": "pg_database_size_bytes{datname=\"tunenumbers\"}", "legendFormat": "size", "refId": "A" }]
+          "targets": [{ "expr": "pg_database_size_bytes{datname=\"directus\"}", "legendFormat": "size", "refId": "A" }]
         },
         {
           "datasource": { "type": "prometheus", "uid": "${datasource}" },
@@ -102,8 +102,8 @@ data:
           "title": "Transactions per Second",
           "type": "timeseries",
           "targets": [
-            { "expr": "rate(pg_stat_database_xact_commit{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "commits", "refId": "A" },
-            { "expr": "rate(pg_stat_database_xact_rollback{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "rollbacks", "refId": "B" }
+            { "expr": "rate(pg_stat_database_xact_commit{datname=\"directus\"}[$__rate_interval])", "legendFormat": "commits", "refId": "A" },
+            { "expr": "rate(pg_stat_database_xact_rollback{datname=\"directus\"}[$__rate_interval])", "legendFormat": "rollbacks", "refId": "B" }
           ]
         },
         {
@@ -139,8 +139,8 @@ data:
           "title": "Rows Read / Written",
           "type": "timeseries",
           "targets": [
-            { "expr": "rate(pg_stat_database_tup_fetched{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "rows fetched", "refId": "A" },
-            { "expr": "rate(pg_stat_database_tup_inserted{datname=\"tunenumbers\"}[$__rate_interval]) + rate(pg_stat_database_tup_updated{datname=\"tunenumbers\"}[$__rate_interval]) + rate(pg_stat_database_tup_deleted{datname=\"tunenumbers\"}[$__rate_interval])", "legendFormat": "rows written", "refId": "B" }
+            { "expr": "rate(pg_stat_database_tup_fetched{datname=\"directus\"}[$__rate_interval])", "legendFormat": "rows fetched", "refId": "A" },
+            { "expr": "rate(pg_stat_database_tup_inserted{datname=\"directus\"}[$__rate_interval]) + rate(pg_stat_database_tup_updated{datname=\"directus\"}[$__rate_interval]) + rate(pg_stat_database_tup_deleted{datname=\"directus\"}[$__rate_interval])", "legendFormat": "rows written", "refId": "B" }
           ]
         },
         {
