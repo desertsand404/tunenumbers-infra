@@ -294,9 +294,9 @@ alerting:
                 model:
                   type: reduce
                   expression: A
-                  reducer: sum
+                  reducer: last
                   settings:
-                    mode: ""
+                    mode: dropNN
               - refId: C
                 relativeTimeRange:
                   from: 0

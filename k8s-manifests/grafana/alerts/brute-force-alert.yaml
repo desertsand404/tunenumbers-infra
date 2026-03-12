@@ -50,9 +50,9 @@ groups:
               type: reduce
               expression: A
               refId: B
-              reducer: sum
+              reducer: last
               settings:
-                mode: ""
+                mode: dropNN
           # Expression C: threshold — alert if any new bans appeared in last 5 min
           - refId: C
             relativeTimeRange:

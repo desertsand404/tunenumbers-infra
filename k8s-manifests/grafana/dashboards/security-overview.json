@@ -123,9 +123,9 @@
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 23 },
       "id": 20,
       "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
-      "title": "Unblock History (deleted decisions)",
+      "title": "Unblock History (flushed alerts)",
       "type": "logs",
-      "targets": [{ "expr": "{namespace=\"crowdsec\"} |= \"deleted decision\" | logfmt", "refId": "A" }]
+      "targets": [{ "expr": "{namespace=\"crowdsec\", container=\"crowdsec-lapi\"} |= \"flushed\" |= \"alerts\" | logfmt", "refId": "A" }]
     },
     {
       "datasource": { "type": "loki", "uid": "${lokids}" },
@@ -134,7 +134,7 @@
       "options": { "dedupStrategy": "none", "enableLogDetails": true, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": false },
       "title": "CrowdSec Ban Events",
       "type": "logs",
-      "targets": [{ "expr": "{namespace=\"crowdsec\"} |= \"new ban\" | logfmt", "refId": "A" }]
+      "targets": [{ "expr": "{namespace=\"crowdsec\", container=\"crowdsec-lapi\"} |~ \"community-blocklist update|POST /v1/alerts\" | logfmt", "refId": "A" }]
     }
   ],
   "refresh": "30s",
