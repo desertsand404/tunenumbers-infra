@@ -91,3 +91,16 @@
       ansible.builtin.command: >
         kubectl -n {{ namespaces.app }} rollout status deployment/umami --timeout=300s
       changed_when: false
+
+    - name: Deploy Umami availability alert to Grafana
+      ansible.builtin.shell: |
+        kubectl create configmap grafana-alert-umami \
+          --from-file=umami-availability-alert.yaml=../../k8s-manifests/grafana/alerts/umami-availability-alert.yaml \
+          --namespace=monitoring --dry-run=client -o yaml | kubectl apply -f -
+      register: umami_alert
+      changed_when: "'created' in umami_alert.stdout or 'configured' in umami_alert.stdout"
+
+    - name: Label Umami alert ConfigMap for Grafana sidecar
+      ansible.builtin.command: >
+        kubectl label configmap grafana-alert-umami grafana_alert=1 -n monitoring --overwrite
+      changed_when: false

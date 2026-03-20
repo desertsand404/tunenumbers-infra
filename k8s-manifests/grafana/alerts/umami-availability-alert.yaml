@@ -1,0 +1,55 @@
+# Grafana alerting provisioning: Umami availability alert.
+# Fires when the Umami pod is not ready for more than 5 minutes.
+# Applied as a ConfigMap in the 'monitoring' namespace with label grafana_alert=1.
+apiVersion: 1
+groups:
+  - orgId: 1
+    name: availability
+    folder: Alerts
+    interval: 1m
+    rules:
+      - uid: umami-not-ready
+        title: "Umami Pod Not Ready"
+        condition: C
+        for: 5m
+        annotations:
+          summary: "Umami pod is not ready — analytics data is being lost"
+          description: "The Umami deployment in namespace tunenumbers has no ready replicas for more than 5 minutes. Tracking data from site visitors is lost while this persists."
+        labels:
+          severity: critical
+          team: ops
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 600
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: "kube_deployment_status_replicas_ready{namespace=\"tunenumbers\", deployment=\"umami\"}"
+              refId: A
+              queryType: range
+          - refId: B
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: reduce
+              expression: A
+              refId: B
+              reducer: last
+              settings:
+                mode: dropNN
+          - refId: C
+            relativeTimeRange:
+              from: 0
+              to: 0
+            datasourceUid: __expr__
+            model:
+              type: threshold
+              expression: B
+              refId: C
+              conditions:
+                - evaluator:
+                    type: lt
+                    params: [1]
