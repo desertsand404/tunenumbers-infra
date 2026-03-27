@@ -52,6 +52,10 @@ envValueFrom:
     secretKeyRef:
       name: smtp-credentials
       key: smtp_password
+  CROWDSEC_API_KEY:
+    secretKeyRef:
+      name: crowdsec-grafana-reader
+      key: api-key
 
 plugins:
   - yesoreyeram-infinity-datasource
@@ -77,8 +81,11 @@ datasources:
         uid: crowdsec-lapi
         type: yesoreyeram-infinity-datasource
         access: proxy
+        url: http://crowdsec-service.crowdsec.svc.cluster.local:8080
         jsonData:
-          global_queries: []
+          httpHeaderName1: "X-Api-Key"
+        secureJsonData:
+          httpHeaderValue1: "$CROWDSEC_API_KEY"
 
 sidecar:
   dashboards:

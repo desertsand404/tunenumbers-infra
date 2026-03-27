@@ -62,12 +62,9 @@
         "type": "json",
         "source": "url",
         "format": "table",
-        "url": "http://crowdsec-service.crowdsec.svc.cluster.local:8080/v1/decisions",
+        "url": "/v1/decisions",
         "url_options": {
-          "method": "GET",
-          "headers": [
-            { "key": "X-Api-Key", "value": "REDACTED" }
-          ]
+          "method": "GET"
         },
         "root_selector": "",
         "columns": [
