@@ -1,5 +1,9 @@
 ansible/vars/secrets.yml
 *.retry
 .env
+.env.*
+.env.local
 .DS_Store
 .vagrant
+*.pem
+*.key
