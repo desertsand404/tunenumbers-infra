@@ -176,7 +176,7 @@ alerting:
         interval: 1m
         rules:
           - uid: disk-usage-high
-            title: "Disk Usage > 85%"
+            title: "Disk Usage > 95%"
             condition: C
             for: 5m
             data:
@@ -209,9 +209,9 @@ alerting:
                   conditions:
                     - evaluator:
                         type: gt
-                        params: [85]
+                        params: [95]
             annotations:
-              summary: "Disk usage above 85%"
+              summary: "Disk usage above 95%"
           - uid: crashloop-backoff
             title: "Pod CrashLoopBackOff"
             condition: C
@@ -276,7 +276,7 @@ alerting:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "max by (instance) ((1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) * 100)"
+                  expr: "min by (name, namespace, exported_namespace) (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
               - refId: B
                 relativeTimeRange:
                   from: 0
@@ -317,17 +317,6 @@ alerting:
                   expr: "sum by (ip) (count_over_time({namespace=\"crowdsec\"} |= \"new ban\" | logfmt | ip != \"\" [5m]))"
                   refId: A
                   queryType: range
-              - refId: B
-                relativeTimeRange:
-                  from: 0
-                  to: 0
-                datasourceUid: __expr__
-                model:
-                  type: reduce
-                  expression: A
-                  reducer: last
-                  settings:
-                    mode: dropNN
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -335,7 +324,7 @@ alerting:
                 datasourceUid: __expr__
                 model:
                   type: threshold
-                  expression: B
+                  expression: A
                   conditions:
                     - evaluator:
                         type: gt
