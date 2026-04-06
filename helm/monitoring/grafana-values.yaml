@@ -224,7 +224,10 @@ alerting:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1
+                  expr: 'max by (namespace, pod, container) (kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"} == 1)'
+                  instant: true
+                  range: false
+                  intervalMs: 1000
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -250,7 +253,10 @@ alerting:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "(certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
+                  expr: "min by (name, namespace) (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
+                  instant: true
+                  range: false
+                  intervalMs: 1000
               - refId: C
                 relativeTimeRange:
                   from: 0
@@ -276,7 +282,7 @@ alerting:
                   to: 0
                 datasourceUid: prometheus
                 model:
-                  expr: "min by (name, namespace, exported_namespace) (certmanager_certificate_expiration_timestamp_seconds - time()) / 86400"
+                  expr: "100 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100)"
               - refId: B
                 relativeTimeRange:
                   from: 0
@@ -302,32 +308,3 @@ alerting:
                         params: [90]
             annotations:
               summary: "Node memory usage above 90%"
-          - uid: brute-force-new-ban
-            title: "New IP Banned — Brute Force"
-            condition: C
-            for: 0s
-            noDataState: OK
-            data:
-              - refId: A
-                relativeTimeRange:
-                  from: 300
-                  to: 0
-                datasourceUid: loki
-                model:
-                  expr: "sum by (ip) (count_over_time({namespace=\"crowdsec\"} |= \"new ban\" | logfmt | ip != \"\" [5m]))"
-                  refId: A
-                  queryType: range
-              - refId: C
-                relativeTimeRange:
-                  from: 0
-                  to: 0
-                datasourceUid: __expr__
-                model:
-                  type: threshold
-                  expression: A
-                  conditions:
-                    - evaluator:
-                        type: gt
-                        params: [0]
-            annotations:
-              summary: 'New IP banned: {{ "{{" }} $labels.ip {{ "}}" }} (brute-force on tunenumbers.de)'
