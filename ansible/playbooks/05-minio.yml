@@ -13,11 +13,13 @@
         src: ../../k8s-manifests/minio/secret.yml.j2
         dest: /tmp/minio-secret.yml
         mode: "0600"
+      tags: [secret]
 
     - name: Apply MinIO secret
       ansible.builtin.command: kubectl apply -f /tmp/minio-secret.yml
       register: minio_secret
       changed_when: "'created' in minio_secret.stdout or 'configured' in minio_secret.stdout"
+      tags: [secret]
 
     - name: Remove templated secret file
       ansible.builtin.file:

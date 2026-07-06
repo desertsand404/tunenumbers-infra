@@ -26,7 +26,7 @@ deploymentMode: SingleBinary
 singleBinary:
   replicas: 1
   nodeSelector:
-    kubernetes.io/hostname: vps1
+    kubernetes.io/hostname: babel-it
   resources:
     requests:
       cpu: 100m

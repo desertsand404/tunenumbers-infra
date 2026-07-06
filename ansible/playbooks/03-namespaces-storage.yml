@@ -12,6 +12,11 @@
       register: ns_apply
       changed_when: "'created' in ns_apply.stdout or 'configured' in ns_apply.stdout"
 
+    - name: Apply NetworkPolicies
+      ansible.builtin.command: kubectl apply -f ../../k8s-manifests/tunenumbers-network-policies.yml
+      register: netpol_apply
+      changed_when: "'created' in netpol_apply.stdout or 'configured' in netpol_apply.stdout"
+
     - name: Create host-path directories for persistent storage
       ansible.builtin.file:
         path: "{{ item }}"

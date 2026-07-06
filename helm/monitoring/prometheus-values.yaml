@@ -1,6 +1,6 @@
 server:
   nodeSelector:
-    kubernetes.io/hostname: vps1
+    kubernetes.io/hostname: babel-it
   retention: "14d"
   extraArgs:
     web.enable-remote-write-receiver: ""

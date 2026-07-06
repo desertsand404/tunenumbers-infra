@@ -1,4 +1,4 @@
-# Grafana Helm values — monitoring on vps1
+# Grafana Helm values — monitoring on babel-it
 admin:
   existingSecret: grafana-admin-secret
   userKey: admin-user
@@ -26,7 +26,7 @@ resources:
     memory: 256Mi
 
 nodeSelector:
-  kubernetes.io/hostname: vps1
+  kubernetes.io/hostname: babel-it
 
 service:
   type: ClusterIP

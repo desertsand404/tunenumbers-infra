@@ -17,7 +17,13 @@ spec:
         kubernetes.io/hostname: babel-it
       containers:
         - name: umami
-          image: ghcr.io/umami-software/umami:postgresql-latest
+          image: ghcr.io/umami-software/umami:postgresql-3.0.3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 3000
           env:

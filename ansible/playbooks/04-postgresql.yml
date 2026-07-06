@@ -13,11 +13,13 @@
         src: ../../k8s-manifests/postgresql/secret.yml.j2
         dest: /tmp/postgresql-secret.yml
         mode: "0600"
+      tags: [secret]
 
     - name: Apply PostgreSQL secret
       ansible.builtin.command: kubectl apply -f /tmp/postgresql-secret.yml
       register: pg_secret
       changed_when: "'created' in pg_secret.stdout or 'configured' in pg_secret.stdout"
+      tags: [secret]
 
     - name: Remove templated secret file
       ansible.builtin.file:
@@ -48,14 +50,6 @@
       ansible.builtin.shell: |
         kubectl -n {{ namespaces.app }} delete pods -l app=postgresql --force --grace-period=0 2>/dev/null || true
       changed_when: false
-
-    - name: Clean corrupted pgdata via temporary pod
-      ansible.builtin.shell: |
-        kubectl -n {{ namespaces.app }} run pgdata-cleanup --rm -i --restart=Never \
-          --image=busybox:latest \
-          --overrides='{"spec":{"volumes":[{"name":"data","persistentVolumeClaim":{"claimName":"postgresql-pvc"}}],"containers":[{"name":"cleanup","image":"busybox:latest","command":["sh","-c","rm -rf /data/pgdata/* && echo done"],"volumeMounts":[{"name":"data","mountPath":"/data"}]}]}}' \
-          2>/dev/null || true
-      changed_when: true
 
     - name: Scale up PostgreSQL
       ansible.builtin.command: >

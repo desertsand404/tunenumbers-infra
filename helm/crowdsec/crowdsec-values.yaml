@@ -22,8 +22,7 @@ lapi:
             enabled: true
             token: "${REGISTRATION_TOKEN}"
             allowed_ranges:
-              - "10.0.0.0/8"    # Hetzner Private Network (vps1, babel-it)
-              - "10.42.0.0/16"  # K3s Pod Netzwerk Standard
+              - "10.0.0.0/24"   # Hetzner Private Network (babel-it only — single-node)
               - "127.0.0.1/32"
 
   metrics:

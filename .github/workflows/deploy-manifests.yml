@@ -45,14 +45,17 @@ jobs:
       - name: Apply namespaces
         run: kubectl apply -f k8s-manifests/namespaces.yml
 
+      - name: Apply NetworkPolicies
+        run: kubectl apply -f k8s-manifests/tunenumbers-network-policies.yml
+
       - name: Apply storage manifests
         run: kubectl apply -f k8s-manifests/storage/
 
       - name: Template and apply secrets
         run: |
-          ansible-playbook ansible/playbooks/04-postgresql.yml --tags secret 2>/dev/null || true
-          ansible-playbook ansible/playbooks/05-minio.yml --tags secret 2>/dev/null || true
-          ansible-playbook ansible/playbooks/06-directus.yml --tags secret 2>/dev/null || true
+          ansible-playbook ansible/playbooks/04-postgresql.yml --tags secret
+          ansible-playbook ansible/playbooks/05-minio.yml --tags secret
+          ansible-playbook ansible/playbooks/06-directus.yml --tags secret
 
       - name: Apply PostgreSQL manifests
         run: |
@@ -87,7 +90,7 @@ jobs:
 
       - name: Template and apply Umami secret
         run: |
-          ansible-playbook ansible/playbooks/12-umami.yml --tags secret 2>/dev/null || true
+          ansible-playbook ansible/playbooks/12-umami.yml --tags secret
 
       - name: Apply Umami manifests
         run: |
@@ -95,15 +98,9 @@ jobs:
           kubectl apply -f k8s-manifests/umami/service.yml
           kubectl apply -f k8s-manifests/umami/ingress.yml
 
-      - name: Restart changed deployments
+      - name: Restart astro-frontend to pull latest image
         run: |
-          kubectl -n tunenumbers rollout restart deployment/postgresql
-          kubectl -n tunenumbers rollout restart deployment/minio
-          kubectl -n tunenumbers rollout restart deployment/directus
           kubectl -n tunenumbers rollout restart deployment/astro-frontend
-          kubectl -n tunenumbers rollout restart deployment/umami
-          kubectl -n gitea rollout restart deployment/gitea
-          kubectl -n gitea rollout restart deployment/gitea-runner
 
       - name: Cleanup secrets
         if: always()

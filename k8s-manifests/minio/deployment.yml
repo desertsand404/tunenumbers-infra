@@ -17,8 +17,12 @@ spec:
         kubernetes.io/hostname: babel-it
       containers:
         - name: minio
-          image: minio/minio:latest
+          image: minio/minio:RELEASE.2025-09-07T16-13-09Z
           command: ["minio", "server", "/data", "--console-address", ":9001"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 9000
               name: api

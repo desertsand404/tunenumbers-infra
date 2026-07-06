@@ -1,0 +1,81 @@
+---
+# Phase 13 — Host firewall baseline (ufw)
+#
+# NOT imported by site.yml — run manually, supervised, with a Hetzner Cloud
+# Console session open as a recovery path in case of lockout:
+#   ansible-playbook ansible/playbooks/13-firewall.yml --ask-vault-pass
+#
+# Context: this host currently has no firewall at all (`ufw status` = inactive,
+# iptables INPUT policy = ACCEPT). sshd (22) and the k3s API server (6443)
+# both listen on 0.0.0.0 with zero network-level restriction — found via
+# `ss -tlnp` during a 2026-07 infra audit.
+#
+# The k3s API is only ever dialed via 127.0.0.1:6443 (see
+# /etc/rancher/k3s/k3s.yaml) — nothing needs it reachable from outside the
+# host, not even from the private network.
+#
+# Prometheus scrapes kubelet metrics at 10.0.0.2:10250 from a pod (see
+# helm/monitoring/prometheus-values.yaml, job k3s-metrics / k3s-cadvisor).
+# That traffic originates from the pod CIDR (10.42.0.0/16) and traverses the
+# host's INPUT chain like any other incoming connection, so it needs an
+# explicit allow — blocking it silently breaks two Prometheus scrape jobs.
+
+- name: Phase 13 — Host firewall baseline (ufw)
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  tasks:
+    - name: Install ufw
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Allow SSH (22) from anywhere
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+
+    - name: Allow HTTP (80) from anywhere
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
+    - name: Allow HTTPS (443) from anywhere
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
+    - name: Allow Gitea SSH (2222) from anywhere
+      community.general.ufw:
+        rule: allow
+        port: "2222"
+        proto: tcp
+
+    - name: Allow kubelet metrics (10250) from pod CIDR — required by Prometheus k3s-metrics/k3s-cadvisor scrape jobs
+      community.general.ufw:
+        rule: allow
+        port: "10250"
+        proto: tcp
+        src: "10.42.0.0/16"
+
+    - name: Allow all traffic from the Hetzner private network (vSwitch)
+      community.general.ufw:
+        rule: allow
+        src: "10.0.0.0/24"
+
+    - name: Set default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Enable ufw
+      community.general.ufw:
+        state: enabled

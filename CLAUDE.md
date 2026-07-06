@@ -107,10 +107,15 @@ All services are `ClusterIP` by default; Traefik IngressRoute handles external a
 ## Traefik / Ingress
 
 Traefik is installed by k3s. TLS via Let's Encrypt (cert-manager).
-Check existing IngressRoute apiVersion before writing new ones:
-  `kubectl get ingressroute -A`
-Currently in use: verify between `traefik.io/v1alpha1` and `traefik.containo.us/v1alpha1`.
-IngressRoutes use `entryPoints: [websecure]` and `certResolver: letsencrypt`.
+App routes (astro, directus, minio, gitea, umami) use standard
+`networking.k8s.io/v1 Ingress` with `cert-manager.io/cluster-issuer: letsencrypt-prod`
+and `ingressClassName: traefik` — this is the established pattern, keep using it
+for new app routes. Grafana is the one exception, using a Traefik `IngressRoute`
+(`k8s-manifests/monitoring/grafana-ingressroute.yaml`) — check its apiVersion
+before writing new IngressRoutes: `kubectl get ingressroute -A`
+(verify between `traefik.io/v1alpha1` and `traefik.containo.us/v1alpha1`).
+Every public Ingress should carry the CrowdSec bouncer middleware annotation:
+`traefik.ingress.kubernetes.io/router.middlewares: tunenumbers-crowdsec-bouncer@kubernetescrd`
 
 ---
 
@@ -219,7 +224,7 @@ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 ## What NOT to Do
 
 - Do NOT add SSH-based Ansible connections – everything runs local on the VPS
-- Do NOT create Ingress resources (networking.k8s.io/v1) – use Traefik IngressRoute
+- Do NOT add a public Ingress without the CrowdSec bouncer middleware annotation (see Traefik / Ingress section)
 - Do NOT commit `ansible/vars/secrets.yml` – it's gitignored intentionally
 - Do NOT use `NodePort` or `LoadBalancer` service types – all services are ClusterIP
 - Do NOT exceed single-node resource budget without noting it explicitly

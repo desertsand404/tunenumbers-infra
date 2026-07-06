@@ -25,6 +25,7 @@ jobs:
           ---
           letsencrypt_email: "${{ secrets.LETSENCRYPT_EMAIL }}"
           pg_password: "${{ secrets.PG_PASSWORD }}"
+          pg_exporter_password: "${{ secrets.PG_EXPORTER_PASSWORD }}"
           minio_root_user: "${{ secrets.MINIO_ROOT_USER }}"
           minio_root_password: "${{ secrets.MINIO_ROOT_PASSWORD }}"
           directus_admin_email: "${{ secrets.DIRECTUS_ADMIN_EMAIL }}"
@@ -36,6 +37,10 @@ jobs:
           docker_config_json: '${{ secrets.DOCKER_CONFIG_JSON }}'
           umami_db_password: "${{ secrets.UMAMI_DB_PASSWORD }}"
           umami_app_secret: "${{ secrets.UMAMI_APP_SECRET }}"
+          crowdsec_lapi_key: "${{ secrets.CROWDSEC_LAPI_KEY }}"
+          backup_restic_repository: "${{ secrets.BACKUP_RESTIC_REPOSITORY }}"
+          backup_restic_password: "${{ secrets.BACKUP_RESTIC_PASSWORD }}"
+          backup_restic_env_extra: "${{ secrets.BACKUP_RESTIC_ENV_EXTRA }}"
           ENDOFFILE
 
       - name: Run full Ansible playbook
