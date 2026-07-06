@@ -110,3 +110,47 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+---
+# Astro SSR fetches Directus content server-side, not just through the public
+# ingress (found live: default-deny-ingress blocked this, breaking the
+# homepage's CMS content fetch with ECONNREFUSED).
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-astro-to-directus
+  namespace: tunenumbers
+spec:
+  podSelector:
+    matchLabels:
+      app: directus
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: astro-frontend
+      ports:
+        - protocol: TCP
+          port: 8055
+---
+# Astro reports pageviews to Umami server-side.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-astro-to-umami
+  namespace: tunenumbers
+spec:
+  podSelector:
+    matchLabels:
+      app: umami
+  policyTypes:
+    - Ingress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: astro-frontend
+      ports:
+        - protocol: TCP
+          port: 3000
