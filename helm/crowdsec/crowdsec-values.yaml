@@ -8,22 +8,33 @@
 # instead mounted via a kubectl patch in ansible/playbooks/10-brute-force-protection.yml
 # after every helm upgrade. The patch uses Secret 'crowdsec-notification-config'
 # which Ansible creates with SMTP credentials rendered from 'smtp-credentials'.
+#
+# CRITICAL (chart 0.22.0 + image v1.7.6 incompatibility): the LAPI entrypoint runs
+# `ln -s /etc/crowdsec_data /etc/crowdsec`, which silently fails because the v1.7.6
+# image ships /etc/crowdsec as a populated directory. crowdsec then loads the
+# image-default /etc/crowdsec/config.yaml (no auto_registration) and ignores the
+# chart's real config in /etc/crowdsec_data/. Result: agents never auto-validate
+# and the agent DaemonSet CrashLoopBackOffs forever ("machine ... not validated").
+# Fix: force the entrypoint to load the chart config via CONFIG_FILE (lapi.env below).
 
 # ── LAPI (Local API — decision engine) ──────────────────────────────────────
 lapi:
   enabled: true
   replicas: 1
 
-  config:
-    config.yaml.local: |
-      api:
-        server:
-          auto_registration:
-            enabled: true
-            token: "${REGISTRATION_TOKEN}"
-            allowed_ranges:
-              - "10.0.0.0/24"   # Hetzner Private Network (babel-it only — single-node)
-              - "127.0.0.1/32"
+  # Point crowdsec at the chart-provided config so its (working) default
+  # config.yaml.local — which enables auto_registration — actually loads.
+  # Without this, agents never validate and the agent DaemonSet crashloops.
+  env:
+    - name: CONFIG_FILE
+      value: /etc/crowdsec_data/config.yaml
+
+  # NOTE: a `lapi.config.config.yaml.local` override is NOT honored by chart 0.22.0
+  # (verified live: the effective config uses the chart's own default ranges, not
+  # ours). The chart default auto_registration.allowed_ranges is 10.0.0.0/8, which
+  # covers the k3s pod CIDR (10.42.x) the agent registers from. Narrowing that range
+  # (audit finding H-1) is therefore not achievable via values on this chart version;
+  # it would need a chart upgrade or a post-render patch. Left as an accepted gap.
 
   metrics:
     enabled: true
