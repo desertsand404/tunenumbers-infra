@@ -18,7 +18,7 @@ spec:
       serviceAccountName: gitea-runner
       containers:
         - name: runner
-          image: gitea/act_runner:v0.6.0
+          image: gitea/act_runner@sha256:b2df7d04d17334ff8e741c32b0df099d5df046d96599cb330d4ed7c097cb087f
           env:
             - name: GITEA_INSTANCE_URL
               value: "http://gitea-http.gitea.svc.cluster.local:3000"

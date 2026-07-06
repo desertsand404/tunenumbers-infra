@@ -18,12 +18,6 @@ spec:
       containers:
         - name: directus
           image: directus/directus:12.0.2
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
           ports:
             - containerPort: 8055
           env:
