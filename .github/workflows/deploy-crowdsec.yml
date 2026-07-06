@@ -1,0 +1,65 @@
+name: Deploy CrowdSec / Brute-force Protection
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'helm/crowdsec/**'
+      - 'k8s-manifests/crowdsec/**'
+      - 'ansible/playbooks/10-brute-force-protection.yml'
+      - '.github/workflows/deploy-crowdsec.yml'
+  workflow_dispatch:
+
+# Deploys the CrowdSec detection stack (playbook 10): helm upgrade with
+# crowdsec-values.yaml, log parsers + brute-force scenario ConfigMaps, the
+# rendered email-notification config, and the Grafana security dashboard/alert.
+#
+# NOT handled here: the Traefik bouncer middleware (playbook 09). That applies the
+# global Traefik HelmChartConfig and needs crowdsec_lapi_key, so it stays on
+# site.yml / manual to avoid restarting Traefik on every crowdsec-values change.
+#
+# Prerequisite: the smtp-credentials Secret must already exist in the monitoring
+# namespace (playbook 10 fails fast if not). Created out-of-band, like grafana-admin-secret.
+
+jobs:
+  deploy:
+    name: Deploy CrowdSec
+    runs-on: self-hosted
+    environment: production
+    env:
+      KUBECONFIG: /home/github-runner/.kube/config
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify kubectl connectivity
+        run: kubectl cluster-info
+
+      - name: Verify Helm is available
+        run: helm version
+
+      # Playbook 10 reads SMTP from the in-cluster smtp-credentials Secret and uses
+      # no secrets.yml vars, but loads the file via vars_files — so it must exist.
+      - name: Create (empty) secrets.yml
+        run: |
+          printf -- '---\n' > ansible/vars/secrets.yml
+
+      - name: Run brute-force protection deployment (playbook 10)
+        run: |
+          ansible-playbook ansible/playbooks/10-brute-force-protection.yml -v
+
+      - name: Cleanup secrets
+        if: always()
+        run: rm -f ansible/vars/secrets.yml
+
+      - name: Verify deployment
+        run: |
+          echo "=== CrowdSec pods ==="
+          kubectl get pods -n crowdsec
+          echo "=== LAPI CONFIG_FILE env (auto_registration fix) ==="
+          kubectl get deployment crowdsec-lapi -n crowdsec \
+            -o jsonpath='{.spec.template.spec.containers[0].env[?(@.name=="CONFIG_FILE")]}' ; echo
+          echo "=== Registered machines (agent should show validated) ==="
+          kubectl exec -n crowdsec deployment/crowdsec-lapi -- cscli machines list
