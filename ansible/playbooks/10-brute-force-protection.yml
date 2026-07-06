@@ -11,6 +11,9 @@
   vars:
     crowdsec_namespace: crowdsec
     monitoring_namespace: monitoring
+    # Pin the chart — an unpinned `helm upgrade` silently jumped 0.22.0 -> 0.24.0
+    # (image v1.7.6 -> v1.7.8) on a routine run. Bump this deliberately.
+    crowdsec_chart_version: "0.24.0"
 
   tasks:
     # ── Prerequisites ────────────────────────────────────────────────────────
@@ -31,7 +34,7 @@
 
     # ── CrowdSec ConfigMaps ───────────────────────────────────────────────────
 
-    - name: Apply CrowdSec parser ConfigMaps (Directus, Grafana, Gitea)
+    - name: Apply CrowdSec parser ConfigMaps (Directus, Grafana, Gitea, Traefik/MinIO)
       ansible.builtin.command:
         cmd: >
           kubectl apply -f
@@ -40,6 +43,7 @@
         - parser-directus.yaml
         - parser-grafana.yaml
         - parser-gitea.yaml
+        - parser-traefik-minio.yaml
       changed_when: true
 
     - name: Apply CrowdSec brute-force scenario ConfigMap
@@ -65,6 +69,7 @@
       ansible.builtin.command:
         cmd: >
           helm upgrade --install crowdsec crowdsec/crowdsec
+          --version {{ crowdsec_chart_version }}
           --namespace {{ crowdsec_namespace }}
           --values {{ playbook_dir }}/../../helm/crowdsec/crowdsec-values.yaml
           --wait
