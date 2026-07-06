@@ -18,12 +18,6 @@ spec:
       containers:
         - name: umami
           image: ghcr.io/umami-software/umami@sha256:28f263fe06f79ebffa5a6a6e9bd33b7a278e9342a88e0bdac812416c9f9e4361
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1001
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop: ["ALL"]
           ports:
             - containerPort: 3000
           env:
