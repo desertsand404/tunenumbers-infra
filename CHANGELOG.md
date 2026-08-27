@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Gitea**: Upgrade 1.26.2 → 1.27.2 — fixes CVE-2026-60004 (CVSS 9.8, CISA KEV,
+  actively exploited): unauthenticated RCE via the diffpatch API through Git hook
+  installation, affecting 1.17 up to < 1.27.1
+
+### Bugfixes
+
+- **Gitea**: Add `GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES` to the deployment —
+  was applied manually in-cluster but missing from the manifest, so any `kubectl apply`
+  would drop it and break real client-IP resolution for CrowdSec and rate limiting
+
 ## [1.1.0] – 2026-03-05
 
 ### Features

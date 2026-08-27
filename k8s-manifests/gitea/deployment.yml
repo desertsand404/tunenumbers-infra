@@ -28,7 +28,7 @@ spec:
               mountPath: /data
       containers:
         - name: gitea
-          image: gitea/gitea:1.26.2
+          image: gitea/gitea:1.27.2
           ports:
             - containerPort: 3000
               name: http
@@ -53,6 +53,8 @@ spec:
               value: "true"
             - name: GITEA__security__INSTALL_LOCK
               value: "true"
+            - name: GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES
+              value: "10.42.0.0/16"
             - name: GITEA__metrics__ENABLED
               value: "true"
           volumeMounts:
