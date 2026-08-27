@@ -247,6 +247,9 @@
       changed_when: true
 
     # ── Grafana Helm upgrade (adds SMTP + alerts sidecar) ────────────────────
+    # Skipped while monitoring_enabled is false: the stack is scaled to zero, so
+    # `--wait --timeout 10m0s` could only ever end in "context deadline exceeded"
+    # — or worse, resurrect a stack that was deliberately switched off.
 
     - name: Upgrade Grafana Helm release with SMTP configuration and alerts sidecar
       ansible.builtin.command:
@@ -259,8 +262,10 @@
           --timeout 10m0s
           --cleanup-on-fail
       changed_when: true
+      when: monitoring_enabled | bool
 
     # ── Prometheus Helm upgrade (adds CrowdSec scrape job) ───────────────────
+    # Skipped while monitoring_enabled is false — see the Grafana task above.
 
     - name: Upgrade Prometheus Helm release with CrowdSec scrape config
       ansible.builtin.command:
@@ -273,6 +278,7 @@
           --timeout 10m0s
           --cleanup-on-fail
       changed_when: true
+      when: monitoring_enabled | bool
 
     # ── Verification ──────────────────────────────────────────────────────────
 

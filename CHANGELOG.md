@@ -18,6 +18,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Gitea**: Add `GITEA__security__REVERSE_PROXY_TRUSTED_PROXIES` to the deployment —
   was applied manually in-cluster but missing from the manifest, so any `kubectl apply`
   would drop it and break real client-IP resolution for CrowdSec and rate limiting
+- **CrowdSec**: `Deploy CrowdSec / Brute-force Protection` has failed on every run
+  since 2026-07-06. Playbook 10 ended with two `helm upgrade --wait --timeout 10m0s`
+  calls against Grafana and Prometheus, which cannot succeed while the monitoring
+  stack is scaled to zero. Both are now gated behind `monitoring_enabled`
+
+### Changed
+
+- **Monitoring**: Encode the disabled state of the Grafana/Prometheus/Loki/Alloy
+  stack in the repo via `monitoring_enabled: false` in `ansible/vars/main.yml`.
+  The stack has been off since 2026-07-06 — the grafana, loki and prometheus Helm
+  upgrades failed in sequence with `context deadline exceeded` and the workloads
+  were then scaled to zero by hand. That decision lived only in the cluster and
+  was invisible to the repo, so every deploy tried to undo it. While the flag is
+  false, playbook 09 ends immediately and playbook 10 skips its Grafana/Prometheus
+  Helm upgrades. Dashboard and alert-rule ConfigMaps are still applied — they are
+  inert data and keep the definitions current for a later re-enable.
+  The releases `grafana` (rev 47), `loki` (rev 34) and `prometheus` (rev 38)
+  remain in Helm status `failed`; the underlying readiness failure was never
+  diagnosed and needs to be before the flag is flipped back
 
 ## [1.1.0] – 2026-03-05
 

@@ -25,6 +25,20 @@ Schwester-Repo `tunenumbers-de/` (Astro SSR) nur lesend verwenden.
 | Traefik        | kube-system  | (reverse proxy)            | traefik.kube-system.svc.cluster.local                |
 | cert-manager   | cert-manager | (internal)                 | –                                                     |
 
+### Monitoring stack — DISABLED
+
+Grafana, Prometheus, Loki and Alloy (namespace `monitoring`) are **switched off**
+since 2026-07-06 and the namespace runs zero pods. This is deliberate and is
+encoded as `monitoring_enabled: false` in `ansible/vars/main.yml` — read the
+comment there before changing anything.
+
+Do not "fix" this by re-running playbook 09 or by scaling the deployments back up.
+The three Helm releases are still in status `failed` (`context deadline exceeded`)
+and the root cause of the readiness failure was never found. Anything that adds a
+`helm upgrade ... --wait` against this namespace must be gated on
+`monitoring_enabled`, otherwise it burns a 10-minute timeout and fails the job —
+this is exactly what broke the CrowdSec workflow for seven weeks.
+
 ---
 
 ## Ansible Conventions
@@ -230,4 +244,6 @@ export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 - Do NOT exceed single-node resource budget without noting it explicitly
 - Do NOT use `imagePullPolicy: IfNotPresent` for own images – use `Always`
   (Gitea registry uses `:latest` tags that get overwritten)
+- Do NOT add a `helm upgrade ... --wait` against the `monitoring` namespace without
+  gating it on `monitoring_enabled` – the stack is off, so it can only time out
 

@@ -5,6 +5,28 @@ github_runner_user: github-runner
 github_runner_dir: /opt/actions-runner
 kubeconfig_path: /home/github-runner/.kube/config
 
+# ── Monitoring stack (Grafana / Prometheus / Loki / Alloy) ───────────────────
+# DISABLED since 2026-07-06. On that day the grafana, loki and prometheus Helm
+# upgrades failed in sequence with "context deadline exceeded" (10m --wait each);
+# the stack was then scaled to zero by hand in the cluster and left off.
+#
+# While this is false:
+#   - playbook 09-monitoring.yml ends immediately (deploys nothing)
+#   - playbook 10-brute-force-protection.yml skips its Grafana/Prometheus Helm
+#     upgrades, so CrowdSec can deploy without waiting 20 minutes for a stack
+#     that is not there
+#
+# Grafana/Prometheus ConfigMaps (dashboards, alert rules) are still applied —
+# they are inert data and keep the definitions current for a later re-enable.
+#
+# To bring monitoring back: set this to true, then investigate the original
+# readiness failure BEFORE running playbook 09 — the root cause was never found.
+# The in-cluster overrides (replicas: 0 on grafana/prometheus-server/
+# prometheus-kube-state-metrics/loki, nodeSelector monitoring=disabled on the
+# alloy DaemonSet) must be removed too, and the grafana/loki/prometheus Helm
+# releases are still in status "failed".
+monitoring_enabled: false
+
 namespaces:
   app: tunenumbers
   gitea: gitea

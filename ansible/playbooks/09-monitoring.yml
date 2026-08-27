@@ -43,6 +43,17 @@
         values_file: "{{ playbook_dir }}/../../helm/monitoring/postgres-exporter-values.yaml"
 
   tasks:
+    - name: Report that monitoring is disabled
+      ansible.builtin.debug:
+        msg: >-
+          monitoring_enabled is false — skipping the entire monitoring stack.
+          See ansible/vars/main.yml for why and for how to re-enable it.
+      when: not (monitoring_enabled | bool)
+
+    - name: End play if monitoring is disabled
+      ansible.builtin.meta: end_play
+      when: not (monitoring_enabled | bool)
+
     - name: Clear any pending Helm release locks
       ansible.builtin.shell: |
         kubectl get secrets -n {{ monitoring_namespace }} \
